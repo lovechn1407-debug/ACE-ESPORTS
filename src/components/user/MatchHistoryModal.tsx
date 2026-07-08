@@ -223,7 +223,7 @@ const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({ onClose, onViewRe
                           padding: '0px', 
                           borderRadius: '4px',
                           border: '1px solid rgba(250,204,21,0.18)',
-                          background: "url('/images/results_btn_bg.webp') no-repeat center center / cover",
+                          background: "url('/images/results_btn_bg.webp') no-repeat center center / 100% 100%",
                           color: '#000000', 
                           fontSize: '0.68rem', 
                           fontWeight: 'normal',
