@@ -218,15 +218,15 @@ const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({ onClose, onViewRe
                         onClick={() => onViewResults(match.tournamentId, match.tournamentName)}
                         style={{
                           marginLeft: 'auto', 
-                          width: '110px', 
-                          height: '41px', 
+                          width: '84px', 
+                          height: '30px', 
                           padding: '0px', 
                           borderRadius: '4px',
                           border: '1px solid rgba(250,204,21,0.18)',
                           background: "url('/images/results_btn_bg.webp') no-repeat center center",
                           backgroundSize: '100% 214%',
                           color: '#000000', 
-                          fontSize: '0.8rem', 
+                          fontSize: '0.68rem', 
                           fontWeight: 'normal',
                           cursor: 'pointer', 
                           display: 'flex', 
