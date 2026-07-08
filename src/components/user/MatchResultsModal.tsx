@@ -173,8 +173,8 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       padding: '9px 12px',
                       borderRadius: '0px',
                       border: 'none',
-                      background: 'url(/images/match_results_item_bg.webp) no-repeat center center',
-                      backgroundSize: '100% 300%, cover',
+                      background: 'url(/images/match_results_item_bg.webp) no-repeat -5% center',
+                      backgroundSize: '105% 300%, cover',
                     }}
                   >
                     {/* Rank number */}
@@ -219,14 +219,14 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
 
                     {/* Kill count */}
                     <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '40px' }}>
-                      <div style={{ fontSize: '0.62rem', color: '#334155', marginBottom: '1px' }}>Kills</div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: player.kills > 0 ? '#F87171' : '#334155' }}>{player.kills ?? 0}</div>
+                      <div style={{ fontSize: '0.62rem', color: '#FFFFFF', marginBottom: '1px', opacity: 0.8 }}>Kills</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#FFFFFF' }}>{player.kills ?? 0}</div>
                     </div>
 
                     {/* Winnings */}
                     <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '54px' }}>
-                      <div style={{ fontSize: '0.62rem', color: '#334155', marginBottom: '1px' }}>Earned</div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: (player.winnings || 0) > 0 ? '#4ADE80' : '#334155' }}>
+                      <div style={{ fontSize: '0.62rem', color: '#FFFFFF', marginBottom: '1px', opacity: 0.8 }}>Earned</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#FFFFFF' }}>
                         {(player.winnings || 0) > 0 ? `₹${player.winnings.toFixed(0)}` : '—'}
                       </div>
                     </div>

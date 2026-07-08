@@ -150,10 +150,9 @@ const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({ onClose, onViewRe
                   <div
                     key={match.tournamentId + idx}
                     style={{
-                      borderRadius: '0px',
-                      border: 'none',
-                      background: 'url(/images/match_history_item_bg.webp) no-repeat center center',
-                      backgroundSize: '100% 410%, cover',
+                      borderRadius: '8px',
+                      border: `1px solid ${isWin ? 'rgba(250,204,21,0.18)' : 'rgba(255,255,255,0.06)'}`,
+                      background: isWin ? 'rgba(250,204,21,0.05)' : 'rgba(255,255,255,0.025)',
                       padding: '12px 13px',
                       position: 'relative',
                       overflow: 'hidden',
@@ -174,7 +173,7 @@ const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({ onClose, onViewRe
                           fontWeight: 600, fontSize: '0.83rem', color: '#CBD5E1',
                           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                         }}>{match.tournamentName}</div>
-                        <div style={{ fontSize: '0.65rem', color: '#94A3B8', marginTop: '2px' }}>
+                        <div style={{ fontSize: '0.65rem', color: '#475569', marginTop: '2px' }}>
                           <i className="bi bi-calendar3 me-1"></i>
                           {new Date(match.date).toLocaleString('en-IN', {
                             day: 'numeric', month: 'short', year: 'numeric',
