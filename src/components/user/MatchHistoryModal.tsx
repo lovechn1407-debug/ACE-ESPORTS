@@ -187,11 +187,11 @@ const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({ onClose, onViewRe
                       <div style={{
                         display: 'flex', alignItems: 'center', gap: '4px',
                         padding: '3px 9px', borderRadius: '4px', flexShrink: 0,
-                        background: `${meta.color}14`,
-                        border: `1px solid ${meta.color}28`,
+                        background: 'rgba(202, 138, 4, 0.12)',
+                        border: '1px solid rgba(202, 138, 4, 0.25)',
                       }}>
-                        <i className={`bi ${meta.icon}`} style={{ fontSize: '0.65rem', color: meta.color }}></i>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: meta.color }}>{meta.label}</span>
+                        <i className={`bi ${meta.icon}`} style={{ fontSize: '0.65rem', color: '#CA8A04' }}></i>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#CA8A04' }}>{meta.label}</span>
                       </div>
                     </div>
 
@@ -219,15 +219,13 @@ const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({ onClose, onViewRe
                       <button
                         onClick={() => onViewResults(match.tournamentId, match.tournamentName)}
                         style={{
-                          marginLeft: 'auto', padding: '3px 10px', borderRadius: '4px',
-                          border: '1px solid rgba(250,204,21,0.18)',
-                          background: 'rgba(250,204,21,0.06)',
-                          color: '#FACC15', fontSize: '0.68rem', fontWeight: 600,
+                          marginLeft: 'auto', padding: '3px 10px', borderRadius: '0px',
+                          border: 'none',
+                          background: "url('/buttons/FF_UI_HurricaneB_Button01.webp') no-repeat center center",
+                          backgroundSize: '112% 520%',
+                          color: '#000000', fontSize: '0.68rem', fontWeight: 800,
                           cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
-                          transition: 'background 0.15s',
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(250,204,21,0.13)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(250,204,21,0.06)')}
                       >
                         <i className="bi bi-graph-up" style={{ fontSize: '0.6rem' }}></i>
                         Results
