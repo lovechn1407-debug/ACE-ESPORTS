@@ -66,16 +66,16 @@ const PlayerApp: React.FC = () => {
         localStorage.setItem('lastAppliedRefresh', String(serverTS));
         console.log('Admin triggered hard refresh. Clearing caches and reloading...');
         
-        if ('caches' in window) {
+        if ('caches' in (window as any)) {
           caches.keys().then((names) => {
             Promise.all(names.map(name => caches.delete(name))).finally(() => {
-              window.location.reload();
+              (window as any).location.reload();
             });
           }).catch(() => {
-            window.location.reload();
+            (window as any).location.reload();
           });
         } else {
-          window.location.reload();
+          (window as any).location.reload();
         }
       }
     }
@@ -345,7 +345,7 @@ const PlayerApp: React.FC = () => {
               setActiveView('game');
             }}
             onOpenChat={(tId, tName) => setActiveChat({ id: tId, name: tName })}
-            onOpenPlayers={(tId, tName, gId, gName) => {
+            onOpenPlayers={(tId, _tName, gId, gName) => {
               setInitialSelectedTournamentId(tId);
               setInitialModalType('players');
               setSelectedGame({ id: gId, name: gName });

@@ -44,6 +44,12 @@ export interface AppSettings {
     cardOpacity: number;
     activePreset?: string;
   };
+  updateConfig?: {
+    lastHardRefresh?: number;
+    forceUpdate?: boolean;
+    appVersion?: string;
+    appLink?: string;
+  };
 }
 
 

@@ -25,6 +25,7 @@ interface Tournament {
   roomPassword?: string;
   showIdPass?: boolean;
   prizeDistribution?: Record<string, number> | string;
+  registeredPlayers?: Record<string, any>;
 }
 
 const AdminTournaments: React.FC = () => {
@@ -668,7 +669,7 @@ const AdminTournaments: React.FC = () => {
                   </thead>
                   <tbody>
                     {registeredPlayersList.length > 0 ? (
-                      registeredPlayersList.map((player, idx) => (
+                      registeredPlayersList.map((player) => (
                         <tr key={player.uid} className="border-bottom border-secondary border-opacity-10">
                           <td className="py-2 ps-3">
                             <div className="fw-bold text-white">{player.displayName}</div>

@@ -45,7 +45,7 @@ interface Claim {
   processedAt?: number;
 }
 
-const EarningZone: React.FC<EarningZoneProps> = ({ onBack }) => {
+const EarningZone: React.FC<EarningZoneProps> = ({ onBack: _onBack }) => {
   const { currentUser, userProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<'wheel' | 'missions' | 'vouchers'>('wheel');
   const [loading, setLoading] = useState(true);
@@ -310,7 +310,7 @@ const EarningZone: React.FC<EarningZoneProps> = ({ onBack }) => {
     setAdLoadingText('Loading Sponsor Video...');
     setAdOverlayOpen(true);
 
-    const loadTimer = setTimeout(() => {
+    setTimeout(() => {
       setAdLoadingText('Sponsored Video Playing...');
     }, 1500);
 
