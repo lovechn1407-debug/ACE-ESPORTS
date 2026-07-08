@@ -217,13 +217,22 @@ const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({ onClose, onViewRe
                       <button
                         onClick={() => onViewResults(match.tournamentId, match.tournamentName)}
                         style={{
-                          marginLeft: 'auto', padding: '3px 10px', borderRadius: '0px',
-                          border: 'none',
+                          marginLeft: 'auto', 
+                          width: '110px', 
+                          height: '41px', 
+                          padding: '0px', 
+                          borderRadius: '4px',
+                          border: '1px solid rgba(250,204,21,0.18)',
                           background: "url('/images/results_btn_bg.webp') no-repeat center center",
-                          backgroundSize: 'cover',
-                          color: '#FFFFFF', fontSize: '0.68rem', fontWeight: 800,
-                          textShadow: '1px 1px 1px rgba(0,0,0,0.8)',
-                          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                          backgroundSize: '100% 214%',
+                          color: '#000000', 
+                          fontSize: '0.8rem', 
+                          fontWeight: 'normal',
+                          cursor: 'pointer', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center', 
+                          gap: '4px',
                         }}
                       >
                         <i className="bi bi-graph-up" style={{ fontSize: '0.6rem' }}></i>
