@@ -186,12 +186,10 @@ const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({ onClose, onViewRe
                       {/* Rank tag */}
                       <div style={{
                         display: 'flex', alignItems: 'center', gap: '4px',
-                        padding: '3px 9px', borderRadius: '4px', flexShrink: 0,
-                        background: 'rgba(202, 138, 4, 0.12)',
-                        border: '1px solid rgba(202, 138, 4, 0.25)',
+                        flexShrink: 0,
                       }}>
-                        <i className={`bi ${meta.icon}`} style={{ fontSize: '0.65rem', color: '#CA8A04' }}></i>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#CA8A04' }}>{meta.label}</span>
+                        <i className={`bi ${meta.icon}`} style={{ fontSize: '0.68rem', color: '#FACC15' }}></i>
+                        <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#FACC15' }}>{meta.label}</span>
                       </div>
                     </div>
 
@@ -221,9 +219,10 @@ const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({ onClose, onViewRe
                         style={{
                           marginLeft: 'auto', padding: '3px 10px', borderRadius: '0px',
                           border: 'none',
-                          background: "url('/buttons/FF_UI_HurricaneB_Button01.webp') no-repeat center center",
-                          backgroundSize: '112% 520%',
-                          color: '#000000', fontSize: '0.68rem', fontWeight: 800,
+                          background: "url('/images/results_btn_bg.webp') no-repeat center center",
+                          backgroundSize: 'cover',
+                          color: '#FFFFFF', fontSize: '0.68rem', fontWeight: 800,
+                          textShadow: '1px 1px 1px rgba(0,0,0,0.8)',
                           cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
                         }}
                       >
