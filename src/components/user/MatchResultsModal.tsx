@@ -174,7 +174,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       borderRadius: '0px',
                       border: 'none',
                       background: 'url(/images/match_results_item_bg.webp) no-repeat center center',
-                      backgroundSize: '100% 300%, cover',
+                      backgroundSize: 'cover',
                     }}
                   >
                     {/* Rank number */}
