@@ -171,9 +171,10 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                     style={{
                       display: 'flex', alignItems: 'center', gap: '10px',
                       padding: '9px 12px',
-                      borderRadius: '8px',
-                      background: isMe ? 'rgba(250,204,21,0.05)' : rs.bg,
-                      border: `1px solid ${isMe ? 'rgba(250,204,21,0.2)' : rs.border}`,
+                      borderRadius: '0px',
+                      border: 'none',
+                      background: 'url(/images/match_results_item_bg.webp) no-repeat center center',
+                      backgroundSize: '100% 300%, cover',
                     }}
                   >
                     {/* Rank number */}
@@ -183,7 +184,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       {player.rank <= 3 ? (
                         <i className={`bi ${rs.icon}`} style={{ color: rs.color, fontSize: '1rem' }}></i>
                       ) : (
-                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#334155' }}>#{player.rank}</span>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94A3B8' }}>#{player.rank}</span>
                       )}
                     </div>
 
@@ -192,7 +193,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       <img
                         src={avatarUrl}
                         alt={player.displayName}
-                        style={{ width: '34px', height: '34px', borderRadius: '6px', objectFit: 'cover' }}
+                        style={{ width: '34px', height: '34px', borderRadius: '0px', objectFit: 'cover' }}
                       />
                       {player.appliedBadgeUrl && (
                         <span className="badge-sweep-wrap" style={{ bottom: '-3px', right: '-3px' }}>
@@ -212,7 +213,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                         {isMe && <span style={{ marginLeft: '6px', fontSize: '0.6rem', background: 'rgba(250,204,21,0.15)', color: '#FACC15', padding: '1px 5px', borderRadius: '3px', fontWeight: 600, letterSpacing: '0.04em' }}>YOU</span>}
                       </div>
                       {player.inGameUsername && (
-                        <div style={{ fontSize: '0.62rem', color: '#334155', marginTop: '1px' }}>{player.inGameUsername}</div>
+                        <div style={{ fontSize: '0.62rem', color: '#94A3B8', marginTop: '1px' }}>{player.inGameUsername}</div>
                       )}
                     </div>
 
