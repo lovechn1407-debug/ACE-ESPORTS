@@ -1,0 +1,429 @@
+import React, { useEffect, useState, useRef } from 'react';
+import { ref, get } from 'firebase/database';
+import { db } from '../../firebase';
+import { useAuth } from '../../contexts/AuthContext';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, EffectFade } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/effect-fade';
+
+interface Promotion {
+  id: string;
+  imageUrl: string;
+  link?: string;
+}
+
+interface Game {
+  id: string;
+  name: string;
+  imageUrl: string;
+  order?: number;
+}
+
+interface Tournament {
+  id: string;
+  name: string;
+  gameId: string;
+  mode: string;
+  map?: string;
+  entryFee: number;
+  perKillPrize: number;
+  prizePool: number;
+  startTime: number;
+  status: 'upcoming' | 'ongoing' | 'completed' | 'result' | 'cancelled';
+  bannerUrl?: string;
+  maxPlayers?: number;
+  registeredPlayers?: Record<string, any>;
+  showIdPass?: boolean;
+}
+
+interface HomeProps {
+  onSelectGame: (gameId: string, gameName: string) => void;
+  onViewTournamentDetails: (tournamentId: string) => void;
+  onOpenChat: (tournamentId: string, tournamentName: string) => void;
+  onOpenPlayers: (tournamentId: string, tournamentName: string) => void;
+  onOpenIdPass: (tournamentId: string) => void;
+  onNavigateTab: (tab: 'home' | 'wallet' | 'leaderboard' | 'earnings' | 'profile') => void;
+}
+
+const Home: React.FC<HomeProps> = ({ 
+  onSelectGame, 
+  onViewTournamentDetails,
+  onOpenChat,
+  onOpenPlayers,
+  onOpenIdPass,
+  onNavigateTab
+}) => {
+  const { userProfile } = useAuth();
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
+  const [myContests, setMyContests] = useState<Tournament[]>([]);
+  const [loadingPromos, setLoadingPromos] = useState(true);
+  const [loadingGames, setLoadingGames] = useState(true);
+  const [loadingContests, setLoadingContests] = useState(true);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const swiperRef = useRef<SwiperType | null>(null);
+
+  // Fetch Promotions
+  useEffect(() => {
+    const fetchPromos = async () => {
+      try {
+        const promoRef = ref(db, 'promotions');
+        const snapshot = await get(promoRef);
+        if (snapshot.exists()) {
+          const promoData = snapshot.val();
+          const list = Object.entries(promoData).map(([id, val]: any) => ({
+            id,
+            ...val
+          })).filter(p => p.imageUrl);
+          setPromotions(list);
+        }
+      } catch (err) {
+        console.error('Error loading promotions:', err);
+      } finally {
+        setLoadingPromos(false);
+      }
+    };
+    fetchPromos();
+  }, []);
+
+  // Fetch Games
+  useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        const gamesRef = ref(db, 'games');
+        const snapshot = await get(gamesRef);
+        if (snapshot.exists()) {
+          const gamesData = snapshot.val();
+          const list = Object.entries(gamesData).map(([id, val]: any) => ({
+            id,
+            ...val
+          })).sort((a, b) => (a.order || 0) - (b.order || 0));
+          setGames(list);
+        }
+      } catch (err) {
+        console.error('Error loading games:', err);
+      } finally {
+        setLoadingGames(false);
+      }
+    };
+    fetchGames();
+  }, []);
+
+  // Fetch Joined Contests
+  useEffect(() => {
+    const fetchMyContests = async () => {
+      if (!userProfile?.joinedTournaments) {
+        setMyContests([]);
+        setLoadingContests(false);
+        return;
+      }
+      try {
+        const joinedIds = Object.keys(userProfile.joinedTournaments);
+        const promises = joinedIds.map(id => get(ref(db, `tournaments/${id}`)));
+        const snaps = await Promise.all(promises);
+        
+        const list: Tournament[] = snaps
+          .map((snap, idx) => {
+            if (snap.exists()) {
+              return { id: joinedIds[idx], ...snap.val() } as Tournament;
+            }
+            return null;
+          })
+          .filter((t): t is Tournament => t !== null && (t.status === 'upcoming' || t.status === 'ongoing'));
+        
+        list.sort((a, b) => a.startTime - b.startTime);
+        setMyContests(list);
+      } catch (err) {
+        console.error('Error loading joined contests:', err);
+      } finally {
+        setLoadingContests(false);
+      }
+    };
+    fetchMyContests();
+  }, [userProfile]);
+
+  const getTimeRemaining = (startTime: number) => {
+    const diff = startTime - Date.now();
+    if (diff <= 0) return 'Starting Soon';
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    let out = '';
+    if (days > 0) out += `${days}d `;
+    if (hours > 0 || days > 0) out += `${hours}h `;
+    out += `${minutes}m`;
+    return out.trim();
+  };
+
+  return (
+    <section className="section py-3">
+      {/* Promotion Banners Slider */}
+      {loadingPromos ? (
+        <div className="promo-slider-skeleton mb-4"></div>
+      ) : (
+        promotions.length > 0 && (
+          <div className="promo-slider-outer mb-4">
+            {/* Custom Nav Arrows — anchored to outer container */}
+            {promotions.length > 1 && (
+              <>
+                <button
+                  className="promo-nav-btn promo-nav-prev"
+                  onClick={() => swiperRef.current?.slidePrev()}
+                  aria-label="Previous slide"
+                >
+                  <i className="bi bi-chevron-left"></i>
+                </button>
+                <button
+                  className="promo-nav-btn promo-nav-next"
+                  onClick={() => swiperRef.current?.slideNext()}
+                  aria-label="Next slide"
+                >
+                  <i className="bi bi-chevron-right"></i>
+                </button>
+              </>
+            )}
+
+            <div className="promo-slider-wrapper">
+              <Swiper
+                modules={[Autoplay, EffectFade]}
+                effect="fade"
+                autoplay={{ delay: 3500, disableOnInteraction: false, pauseOnMouseEnter: true }}
+                loop={promotions.length > 1}
+                slidesPerView={1}
+                speed={700}
+                onSwiper={(swiper) => { swiperRef.current = swiper; }}
+                onSlideChange={(swiper: SwiperType) => setActiveSlide(swiper.realIndex)}
+              >
+                {promotions.map((promo, idx) => (
+                  <SwiperSlide key={promo.id}>
+                    <div className="promo-slide-inner">
+                      {/* Main image */}
+                      {promo.link ? (
+                        <a href={promo.link} target="_blank" rel="noopener noreferrer" className="d-block w-100 h-100">
+                          <img src={promo.imageUrl} alt="Promo" className="promo-slide-img" />
+                        </a>
+                      ) : (
+                        <img src={promo.imageUrl} alt="Promo" className="promo-slide-img" />
+                      )}
+
+                      {/* Bottom gradient overlay */}
+                      <div className="promo-slide-overlay"></div>
+
+                      {/* Slide counter badge top-right */}
+                      <div className="promo-slide-counter">
+                        {idx + 1} / {promotions.length}
+                      </div>
+
+                      {/* Swipe timer progress bar */}
+                      <div className="slide-timer-bar-container">
+                        <div className="slide-timer-bar"></div>
+                      </div>
+                    </div>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </div>
+
+            {/* Custom dot strip — below the slider */}
+            {promotions.length > 1 && (
+              <div className="promo-dot-strip">
+                {promotions.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`promo-dot ${i === activeSlide ? 'active' : ''}`}
+                    onClick={() => swiperRef.current?.slideTo(i)}
+                    style={{ cursor: 'pointer' }}
+                  ></span>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      )}
+
+
+      {/* Quick Navigation Row */}
+      <div className="home-quick-actions-row">
+        <div className="quick-action-item" onClick={() => onNavigateTab('wallet')}>
+          <div className="quick-action-icon-bubble qa-wallet">
+            <i className="bi bi-wallet2"></i>
+          </div>
+          <span>Wallet</span>
+        </div>
+        <div className="quick-action-item" onClick={() => onNavigateTab('earnings')}>
+          <div className="quick-action-icon-bubble qa-spin">
+            <i className="bi bi-compass-fill"></i>
+          </div>
+          <span>Lucky Spin</span>
+        </div>
+        <div className="quick-action-item" onClick={() => onNavigateTab('leaderboard')}>
+          <div className="quick-action-icon-bubble qa-leaderboard">
+            <i className="bi bi-trophy-fill"></i>
+          </div>
+          <span>Rankings</span>
+        </div>
+        <div className="quick-action-item" onClick={() => onNavigateTab('profile')}>
+          <div className="quick-action-icon-bubble qa-refer">
+            <i className="bi bi-gift-fill"></i>
+          </div>
+          <span>Referrals</span>
+        </div>
+      </div>
+
+      {/* Esports Games Grid */}
+      <h2 className="section-title">Esport Games</h2>
+      {loadingGames ? (
+        <div className="row g-3 mb-4">
+          <div className="col-6"><div className="game-card placeholder-glow" style={{ height: '130px' }}></div></div>
+          <div className="col-6"><div className="game-card placeholder-glow" style={{ height: '130px' }}></div></div>
+        </div>
+      ) : (
+        <div className="row g-3 mb-4">
+          {games.length > 0 ? (
+            games.map(game => (
+              <div className="col-6" key={game.id}>
+                <div 
+                  className="game-card custom-card" 
+                  onClick={() => onSelectGame(game.id, game.name)}
+                >
+                  <img src={game.imageUrl} alt={game.name} />
+                  <span>{game.name}</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-secondary text-center col-12">No games available.</p>
+          )}
+        </div>
+      )}
+
+      {/* My Contests list */}
+      <h2 className="section-title">My Contests</h2>
+      {loadingContests ? (
+        <div className="placeholder-glow py-4 rounded-3" style={{ height: '120px' }}></div>
+      ) : (
+        <div className="my-contests-list">
+          {myContests.length > 0 ? (
+            myContests.map(t => {
+              const regCount = t.registeredPlayers ? Object.keys(t.registeredPlayers).length : 0;
+              const maxP = t.maxPlayers || 0;
+              const spotsL = maxP > 0 ? Math.max(0, maxP - regCount) : Infinity;
+              const showIdBtn = t.status === 'ongoing' || 
+                (t.status === 'upcoming' && t.showIdPass && Date.now() > t.startTime - 900000);
+
+              let timerTxt = t.status?.toUpperCase() || 'N/A';
+              if (t.status === 'upcoming') timerTxt = getTimeRemaining(t.startTime);
+              else if (t.status === 'ongoing') timerTxt = 'LIVE';
+              else if (t.status === 'completed' || t.status === 'result') timerTxt = 'ENDED';
+
+              let spotsTxt = 'Unlimited Spots';
+              let progP = 0;
+              if (maxP > 0) {
+                spotsTxt = `${spotsL} Spots Left (${regCount}/${maxP})`;
+                progP = Math.min(100, (regCount / maxP) * 100);
+              }
+
+              const bannerUrl = t.bannerUrl || 'https://via.placeholder.com/400x225/1E293B/94A3B8?text=16:9+Banner';
+
+              return (
+                <div className="tournament-card" key={t.id}>
+                  <img src={bannerUrl} alt="Tournament Banner" className="tournament-banner-image" />
+                  
+                  <div className="tournament-card-content">
+                    <div className="tournament-card-header">
+                      <div className="tournament-card-tags">
+                        <span>My Match</span>
+                        {t.mode && <span>{t.mode}</span>}
+                        {t.map && <span>{t.map}</span>}
+                      </div>
+                      <div className="tournament-card-timer">{timerTxt}</div>
+                    </div>
+                    
+                    <h3 className="tournament-card-title">
+                      <i className="bi bi-joystick text-accent"></i> {t.name}
+                    </h3>
+                    
+                    <p className="small text-secondary mb-2">
+                      <i className="bi bi-calendar-event"></i> {new Date(t.startTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                    </p>
+                    
+                    <div className="tournament-card-info">
+                      <div className="info-item">
+                        <span>Prize Pool</span>
+                        <strong><i className="bi bi-trophy-fill text-accent prize-icon"></i> ₹{t.prizePool}</strong>
+                      </div>
+                      <div className="info-item">
+                        <span>Per Kill</span>
+                        <strong>₹{t.perKillPrize}</strong>
+                      </div>
+                      <div className="info-item">
+                        <span>Entry Fee</span>
+                        <strong className={t.entryFee > 0 ? 'text-info' : ''}>
+                          {t.entryFee > 0 ? `₹${t.entryFee}` : 'Free'}
+                        </strong>
+                      </div>
+                    </div>
+
+                    {maxP > 0 && (
+                      <div className="tournament-card-spots">
+                        <div className="d-flex justify-content-between mb-1">
+                          <span>{spotsTxt}</span>
+                        </div>
+                        <div className="progress">
+                          <div 
+                            className="progress-bar" 
+                            style={{ width: `${progP}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="tournament-card-actions">
+                      <button 
+                        className="btn-custom btn-custom-secondary btn-sm"
+                        onClick={() => onViewTournamentDetails(t.id)}
+                      >
+                        Rules
+                      </button>
+
+                      <button 
+                        className="btn-custom btn-custom-primary btn-sm btn-view-players"
+                        onClick={() => onOpenPlayers(t.id, t.name)}
+                      >
+                        <i className="bi bi-eye-fill"></i> View Players
+                      </button>
+
+                      <button 
+                        className="btn-custom btn-custom-secondary btn-sm btn-chat"
+                        onClick={() => onOpenChat(t.id, t.name)}
+                      >
+                        <i className="bi bi-chat-dots-fill"></i> Chat
+                      </button>
+                    </div>
+
+                    {showIdBtn && (
+                      <button 
+                        className="btn-custom btn-idpass w-100 mt-2 btn-sm"
+                        onClick={() => onOpenIdPass(t.id)}
+                      >
+                        <i className="bi bi-key-fill"></i> View ID & Pass
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <p className="text-secondary text-center py-4 bg-dark-subtle rounded-3">You haven't joined any contests yet.</p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+};
+
+export default Home;

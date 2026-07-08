@@ -1,0 +1,9 @@
+@font-face {
+    font-family: 'GFF Devanagari';
+    src: local('GFF Devanagari Regular'), local('GFF-Devanagari-Regular'),
+        url('GFFDevanagari.woff2') format('woff2'),
+        url('GFFDevanagari.woff') format('woff'),
+        url('GFFDevanagari.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+  }
