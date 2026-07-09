@@ -982,7 +982,7 @@ const AdminTournaments: React.FC = () => {
               />
               
               <div className="tournament-card-content p-3.5" style={{ padding: '14px' }}>
-                <div className="tournament-card-header d-flex justify-content-between align-items-center mb-2" style={{ display: 'flex', justifycontent: 'space-between', alignitems: 'center' }}>
+                <div className="tournament-card-header d-flex justify-content-between align-items-center mb-2" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div className="tournament-card-tags d-flex gap-1" style={{ display: 'flex', gap: '4px' }}>
                     <span className="badge bg-secondary text-white-50" style={{ fontSize: '0.62rem', padding: '3px 8px', background: 'rgba(255,255,255,0.05)' }}>{mode || 'Solo'}</span>
                     <span className="badge bg-secondary text-white-50" style={{ fontSize: '0.62rem', padding: '3px 8px', background: 'rgba(255,255,255,0.05)' }}>Bermuda</span>
@@ -998,7 +998,7 @@ const AdminTournaments: React.FC = () => {
                   <i className="bi bi-calendar-event"></i> {startTimeStr ? new Date(startTimeStr).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '07/15/2026, 18:00'}
                 </p>
                 
-                <div className="tournament-card-info d-flex justify-content-between p-2.5 rounded mb-3" style={{ display: 'flex', justifycontent: 'space-between', padding: '10px', background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                <div className="tournament-card-info d-flex justify-content-between p-2.5 rounded mb-3" style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: '8px' }}>
                   <div className="info-item d-flex flex-column" style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: '0.65rem', color: '#6B7280' }}>Prize Pool</span>
                     <strong style={{ fontSize: '0.8rem', color: '#FACC15' }}><i className="bi bi-trophy-fill me-1"></i>₹{prizePool || 0}</strong>
@@ -1014,7 +1014,7 @@ const AdminTournaments: React.FC = () => {
                 </div>
 
                 <div className="tournament-card-spots mt-3">
-                  <div className="d-flex justify-content-between mb-1 text-secondary" style={{ display: 'flex', justifycontent: 'space-between', fontSize: '0.7rem' }}>
+                  <div className="d-flex justify-content-between mb-1 text-secondary" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem' }}>
                     <span>{maxPlayers || 100} Spots Left</span>
                     <span>0 / {maxPlayers || 100}</span>
                   </div>

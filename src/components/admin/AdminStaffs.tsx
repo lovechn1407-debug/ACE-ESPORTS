@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ref, get, set, update, onValue } from 'firebase/database';
+import { ref, set, update, onValue } from 'firebase/database';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { db, firebaseConfig } from '../../firebase';

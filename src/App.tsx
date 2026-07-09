@@ -596,7 +596,6 @@ const TenantGuard: React.FC<TenantGuardProps> = ({ children, isAdminView }) => {
     );
   }
 
-  const isExpired = orgDetails.subExpiry ? Date.now() > orgDetails.subExpiry : false;
   const isClosed = orgDetails.subClosed;
 
   if (isClosed) {

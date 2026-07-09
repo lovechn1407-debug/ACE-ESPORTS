@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ref, get, query, orderByChild, equalTo } from 'firebase/database';
+import { ref, get } from 'firebase/database';
 import { db } from '../../firebase';
 import { Chart, registerables } from 'chart.js';
 

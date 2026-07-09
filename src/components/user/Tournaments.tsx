@@ -5,9 +5,6 @@ import {
   set, 
   update, 
   push, 
-  query, 
-  orderByChild, 
-  equalTo, 
   runTransaction,
   serverTimestamp 
 } from 'firebase/database';

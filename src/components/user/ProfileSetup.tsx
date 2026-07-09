@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ref, get, set, serverTimestamp, push, rawRef } from 'firebase/database';
+import { ref, get, set, serverTimestamp, push } from 'firebase/database';
+import { rawRef } from '../../firebase-database-wrapper';
 import { db, auth } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSettings } from '../../contexts/SettingsContext';

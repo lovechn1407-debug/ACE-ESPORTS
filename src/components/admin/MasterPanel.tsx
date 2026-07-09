@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ref, get, set, update, remove, onValue, push } from 'firebase/database';
 import { db, auth } from '../../firebase';
-import { onAuthStateChanged, signInWithEmailAndPassword, signInAnonymously, createUserWithEmailAndPassword } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 
 interface Organisation {
   slug: string;
@@ -13,6 +13,7 @@ interface Organisation {
   subMessage: string;
   createdAt: number;
   initCode?: string;
+  unlockedTabsWhenExpired?: string[];
 }
 
 const MasterPanel: React.FC = () => {
