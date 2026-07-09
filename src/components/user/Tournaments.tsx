@@ -44,6 +44,15 @@ interface Tournament {
 
 const IMGBB_API_KEY = '17524c13e2cca244c03f6ad0db42e5e0';
 
+/** Convert "#RRGGBB" → "R, G, B" for CSS rgba() */
+const hexToRgbStr = (hex: string): string => {
+  const clean = (hex || '#FFFFFF').replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16) || 255;
+  const g = parseInt(clean.substring(2, 4), 16) || 255;
+  const b = parseInt(clean.substring(4, 6), 16) || 255;
+  return `${r}, ${g}, ${b}`;
+};
+
 const Tournaments: React.FC<TournamentsProps> = ({ 
   gameId, 
   gameName, 
@@ -246,7 +255,9 @@ const Tournaments: React.FC<TournamentsProps> = ({
             uid,
             displayName: s.val().displayName || 'Player',
             photoURL: s.val().photoURL,
-            appliedBadgeUrl: s.val().appliedBadgeUrl || '',
+            appliedBadgeUrl:    s.val().appliedBadgeUrl    || '',
+            appliedBadgeEffect: s.val().appliedBadgeEffect || 'light-sweep',
+            appliedBadgeColor:  s.val().appliedBadgeColor  || '#FFFFFF',
             username: reg.username,
             gameUid: reg.gameUid,
             role: s.val().isAdmin ? 'ADMIN' : '',
@@ -257,6 +268,8 @@ const Tournaments: React.FC<TournamentsProps> = ({
             username: reg.username,
             gameUid: reg.gameUid,
             appliedBadgeUrl: '',
+            appliedBadgeEffect: 'light-sweep',
+            appliedBadgeColor: '#FFFFFF',
             role: '',
             teammates
           };
@@ -1201,7 +1214,17 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                     {player.username}
                                   </span>
                                   {player.appliedBadgeUrl && (
-                                    <span className="badge-sweep-wrap" style={{ position: 'relative', width: '18px', height: '18px', flexShrink: 0 }}>
+                                    <span
+                                      className="badge-sweep-wrap"
+                                      data-effect={player.appliedBadgeEffect || 'light-sweep'}
+                                      style={{
+                                        position: 'relative',
+                                        width: '18px',
+                                        height: '18px',
+                                        flexShrink: 0,
+                                        ['--badge-color' as any]: hexToRgbStr(player.appliedBadgeColor || '#FFFFFF'),
+                                      }}
+                                    >
                                       <img src={player.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
                                     </span>
                                   )}
@@ -1287,7 +1310,17 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                         {team.username}
                                       </span>
                                       {team.appliedBadgeUrl && (
-                                        <span className="badge-sweep-wrap" style={{ position: 'relative', width: '18px', height: '18px', flexShrink: 0 }}>
+                                        <span
+                                          className="badge-sweep-wrap"
+                                          data-effect={team.appliedBadgeEffect || 'light-sweep'}
+                                          style={{
+                                            position: 'relative',
+                                            width: '18px',
+                                            height: '18px',
+                                            flexShrink: 0,
+                                            ['--badge-color' as any]: hexToRgbStr(team.appliedBadgeColor || '#FFFFFF'),
+                                          }}
+                                        >
                                           <img src={team.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
                                         </span>
                                       )}
@@ -1400,7 +1433,17 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                       {team.username}
                                     </span>
                                     {team.appliedBadgeUrl && (
-                                      <span className="badge-sweep-wrap" style={{ position: 'relative', width: '18px', height: '18px', flexShrink: 0 }}>
+                                      <span
+                                        className="badge-sweep-wrap"
+                                        data-effect={team.appliedBadgeEffect || 'light-sweep'}
+                                        style={{
+                                          position: 'relative',
+                                          width: '18px',
+                                          height: '18px',
+                                          flexShrink: 0,
+                                          ['--badge-color' as any]: hexToRgbStr(team.appliedBadgeColor || '#FFFFFF'),
+                                        }}
+                                      >
                                         <img src={team.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
                                       </span>
                                     )}

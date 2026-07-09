@@ -3785,6 +3785,7 @@ a:hover {
 }
 
 /* ── Badge Overlay with Light Sweep ── */
+/* ── Badge: Base wrapper ── */
 .badge-sweep-wrap {
   position: absolute;
   bottom: -3px;
@@ -3792,36 +3793,112 @@ a:hover {
   display: inline-block;
   overflow: hidden;
   pointer-events: none;
+  --badge-color: 255, 255, 255;
 }
 
 .badge-sweep-wrap img {
   display: block;
   object-fit: contain;
-  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.55));
+  filter: drop-shadow(0 1px 6px rgba(0,0,0,0.65));
 }
 
-.badge-sweep-wrap::after {
+/* ── Effect: light-sweep (default) ── */
+.badge-sweep-wrap[data-effect="light-sweep"]::after,
+.badge-sweep-wrap:not([data-effect])::after {
   content: '';
   position: absolute;
-  top: -20%;
-  left: 0;
-  width: 18%;
-  height: 140%;
+  top: -30%;
+  left: -10%;
+  width: 28%;
+  height: 160%;
   background: linear-gradient(
-    to right,
+    105deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.55) 50%,
+    rgba(var(--badge-color), 0.15) 30%,
+    rgba(var(--badge-color), 0.9) 50%,
+    rgba(var(--badge-color), 0.15) 70%,
     transparent 100%
   );
-  transform: translateX(-200%) skewX(-12deg);
-  animation: badge-sweep-anim 3s ease-in-out infinite;
+  transform: translateX(-250%) skewX(-15deg);
+  animation: badge-sweep-anim 2.4s ease-in-out infinite;
+  border-radius: 2px;
 }
 
 @keyframes badge-sweep-anim {
-  0%,  12% { transform: translateX(-200%) skewX(-12deg); opacity: 0; }
-  18%       { opacity: 1; }
-  55%       { transform: translateX(700%)  skewX(-12deg); opacity: 1; }
-  62%, 100% { transform: translateX(700%)  skewX(-12deg); opacity: 0; }
+  0%,   8% { transform: translateX(-250%) skewX(-15deg); opacity: 0; }
+  14%       { opacity: 1; }
+  58%       { transform: translateX(650%)  skewX(-15deg); opacity: 1; }
+  65%, 100% { transform: translateX(650%)  skewX(-15deg); opacity: 0; }
+}
+
+/* ── Effect: glow (pulsing outer glow) ── */
+.badge-sweep-wrap[data-effect="glow"] img {
+  filter: drop-shadow(0 0 4px rgba(var(--badge-color), 0.9))
+          drop-shadow(0 0 10px rgba(var(--badge-color), 0.6))
+          drop-shadow(0 0 18px rgba(var(--badge-color), 0.35));
+  animation: badge-glow-anim 1.8s ease-in-out infinite alternate;
+}
+.badge-sweep-wrap[data-effect="glow"]::after { display: none; }
+
+@keyframes badge-glow-anim {
+  0%   { filter: drop-shadow(0 0 3px  rgba(var(--badge-color), 0.7))
+                 drop-shadow(0 0 8px  rgba(var(--badge-color), 0.4)); }
+  100% { filter: drop-shadow(0 0 7px  rgba(var(--badge-color), 1))
+                 drop-shadow(0 0 16px rgba(var(--badge-color), 0.75))
+                 drop-shadow(0 0 28px rgba(var(--badge-color), 0.4)); }
+}
+
+/* ── Effect: glitter-shine (rapid multi-beam shimmer) ── */
+.badge-sweep-wrap[data-effect="glitter-shine"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    110deg,
+    transparent 0%,
+    transparent 30%,
+    rgba(var(--badge-color), 0.7) 35%,
+    transparent 40%,
+    transparent 60%,
+    rgba(var(--badge-color), 0.5) 65%,
+    transparent 70%
+  );
+  background-size: 200% 200%;
+  animation: badge-glitter-anim 1.2s linear infinite;
+  mix-blend-mode: screen;
+}
+
+@keyframes badge-glitter-anim {
+  0%   { background-position: 200% 0%; }
+  100% { background-position: -200% 0%; }
+}
+
+/* ── Effect: sparkle (rotating star sparks) ── */
+.badge-sweep-wrap[data-effect="sparkle"]::before,
+.badge-sweep-wrap[data-effect="sparkle"]::after {
+  content: '✦';
+  position: absolute;
+  font-size: 8px;
+  color: rgba(var(--badge-color), 1);
+  text-shadow: 0 0 4px rgba(var(--badge-color), 0.9);
+  animation: badge-sparkle-anim 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+.badge-sweep-wrap[data-effect="sparkle"]::before {
+  top: -4px; right: -4px;
+  animation-delay: 0s;
+}
+.badge-sweep-wrap[data-effect="sparkle"]::after {
+  bottom: -4px; left: -4px;
+  font-size: 6px;
+  animation-delay: 0.75s;
+}
+
+@keyframes badge-sparkle-anim {
+  0%, 100% { transform: scale(0) rotate(0deg);   opacity: 0; }
+  25%       { transform: scale(1.4) rotate(45deg); opacity: 1; }
+  50%       { transform: scale(0.8) rotate(90deg); opacity: 0.7; }
+  75%       { transform: scale(1.2) rotate(135deg);opacity: 1; }
 }
 
 /* ──────────────────────────────────────────────────────────
