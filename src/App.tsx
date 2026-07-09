@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { auth } from './firebase';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { auth, db } from './firebase';
+import { ref, onValue, get, set } from 'firebase/database';
 import { useAuth } from './contexts/AuthContext';
 import { useSettings } from './contexts/SettingsContext';
+import MasterPanel from './components/admin/MasterPanel';
 
 // Common Components
 import Loader from './components/common/Loader';
@@ -23,6 +25,7 @@ import MatchHistoryModal from './components/user/MatchHistoryModal';
 import MatchResultsModal from './components/user/MatchResultsModal';
 import BannedPlayers from './components/user/BannedPlayers';
 import EarningZone from './components/user/EarningZone';
+import ProfileSetup from './components/user/ProfileSetup';
 
 // Admin Components
 import AdminAuth from './components/admin/AdminAuth';
@@ -33,7 +36,7 @@ const Marquee = 'marquee' as any;
 
 // App Layout for Players
 const PlayerApp: React.FC = () => {
-  const { currentUser, loading, isAdmin } = useAuth();
+  const { currentUser, loading, isAdmin, userProfile } = useAuth();
   const { settings, loading: settingsLoading } = useSettings();
 
   // Selected navigation view: 'home' | 'wallet' | 'leaderboard' | 'earnings' | 'profile' | 'game' | 'earningZone'
@@ -233,6 +236,11 @@ const PlayerApp: React.FC = () => {
   // Auth Guard
   if (!currentUser) {
     return <Auth />;
+  }
+
+  // Profile Setup Guard for first-time tenant logins
+  if (!userProfile) {
+    return <ProfileSetup onSetupComplete={() => {}} />;
   }
 
   const handleSelectGame = (gameId: string, gameName: string) => {
@@ -487,31 +495,183 @@ const PlayerApp: React.FC = () => {
 // Admin Console Auth Guard
 const AdminApp: React.FC = () => {
   const { currentUser, isAdmin, loading } = useAuth();
+  const loggedInStaffStr = sessionStorage.getItem('loggedInStaff');
+  const loggedInStaff = loggedInStaffStr ? JSON.parse(loggedInStaffStr) : null;
 
   if (loading) {
     return <Loader fullPage />;
   }
 
-  // Admin Check: logged in AND authorized admin
-  if (currentUser && isAdmin) {
+  // Admin Check: logged in AND authorized admin OR logged in as Staff
+  if ((currentUser && isAdmin) || (loggedInStaff && loggedInStaff.id)) {
     return <AdminLayout />;
   }
 
   return <AdminAuth />;
 };
 
+interface TenantGuardProps {
+  children: React.ReactNode;
+  isAdminView?: boolean;
+}
+
+const TenantGuard: React.FC<TenantGuardProps> = ({ children, isAdminView }) => {
+  const { org } = useParams<{ org: string }>();
+  const [orgDetails, setOrgDetails] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [supportSettings, setSupportSettings] = useState<any>(null);
+
+  useEffect(() => {
+    get(ref(db, 'organisations/supportSettings')).then(snap => {
+      if (snap.exists()) {
+        setSupportSettings(snap.val());
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!org) {
+      setLoading(false);
+      return;
+    }
+
+    const orgRef = ref(db, `organisations/${org}`);
+    const unsubscribe = onValue(orgRef, async (snapshot) => {
+      if (snapshot.exists()) {
+        setOrgDetails(snapshot.val());
+        setLoading(false);
+      } else if (org === 'default') {
+        try {
+          const snap = await get(ref(db, 'users'));
+          const settingsSnap = await get(ref(db, 'settings'));
+          const hasLegacy = snap.exists() || settingsSnap.exists();
+          if (hasLegacy) {
+            const defaultData = {
+              name: settingsSnap.val()?.appName || 'Legacy Esports App',
+              subExpiry: Date.now() + 365 * 24 * 60 * 60 * 1000,
+              subPrice: 0,
+              subClosed: false,
+              showSubMessage: false,
+              subMessage: 'Legacy account auto-registered.',
+              createdAt: Date.now()
+            };
+            await set(orgRef, defaultData);
+            setOrgDetails(defaultData);
+          } else {
+            setOrgDetails(null);
+          }
+        } catch (err) {
+          console.error('Error auto-registering default org:', err);
+          setOrgDetails(null);
+        }
+        setLoading(false);
+      } else {
+        setOrgDetails(null);
+        setLoading(false);
+      }
+    }, (err) => {
+      console.error('Error fetching org settings:', err);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [org]);
+
+  if (loading) {
+    return <Loader fullPage />;
+  }
+
+  if (!orgDetails) {
+    return (
+      <div className="d-flex flex-column align-items-center justify-content-center text-white" style={{ minHeight: '100vh', background: '#0F172A', padding: '24px', fontFamily: 'system-ui' }}>
+        <div className="text-center" style={{ maxWidth: '440px' }}>
+          <i className="bi bi-exclamation-triangle text-danger" style={{ fontSize: '3.5rem' }}></i>
+          <h1 className="fw-bold mt-3">Organisation Not Found</h1>
+          <p className="text-secondary mt-2">The organisation URL you requested does not exist or has been removed. Please verify the URL and try again.</p>
+          <a href="/master" className="btn btn-warning mt-4 px-4 py-2 fw-bold" style={{ color: '#000', borderRadius: '8px' }}>
+            Go to Master Panel
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  const isExpired = orgDetails.subExpiry ? Date.now() > orgDetails.subExpiry : false;
+  const isClosed = orgDetails.subClosed;
+
+  if (isClosed) {
+    return (
+      <div className="d-flex flex-column align-items-center justify-content-center text-white" style={{ minHeight: '100vh', background: '#0F172A', padding: '24px', fontFamily: 'system-ui' }}>
+        <div className="text-center" style={{ maxWidth: '440px' }}>
+          <i className="bi bi-shield-slash-fill text-danger animate-pulse" style={{ fontSize: '3.5rem' }}></i>
+          <h1 className="fw-bold mt-3">Subscription Suspended</h1>
+          <p className="text-secondary mt-2 mb-4">
+            The subscription for <strong>{orgDetails.name}</strong> is currently suspended.<br />
+            Please contact the system administrator to restore access.
+          </p>
+
+          {supportSettings && (
+            <div className="p-3 mb-4 text-start" style={{ background: '#1E293B', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px' }}>
+              <h6 className="fw-bold text-warning mb-3" style={{ fontSize: '0.85rem' }}>
+                <i className="bi bi-telephone-fill me-1"></i> Contact Support
+              </h6>
+              <div className="d-flex flex-column gap-2" style={{ fontSize: '0.82rem' }}>
+                {supportSettings.whatsapp && (
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="bi bi-whatsapp text-success"></i>
+                    <span>WhatsApp: <strong className="text-white">{supportSettings.whatsapp}</strong></span>
+                  </div>
+                )}
+                {supportSettings.mobile && (
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="bi bi-telephone-fill text-info"></i>
+                    <span>Mobile: <strong className="text-white">{supportSettings.mobile}</strong></span>
+                  </div>
+                )}
+                {supportSettings.email && (
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="bi bi-envelope-fill text-danger"></i>
+                    <span>Email: <strong className="text-white">{supportSettings.email}</strong></span>
+                  </div>
+                )}
+                {supportSettings.instagram && (
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="bi bi-instagram text-primary-emphasis" style={{ color: '#E1306C' }}></i>
+                    <span>Instagram: <strong className="text-white">@{supportSettings.instagram}</strong></span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {isAdminView && (
+            <a href="/master" className="btn btn-warning px-4 py-2 fw-bold" style={{ color: '#000', borderRadius: '8px' }}>
+              Go to Host Master Panel
+            </a>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
+
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Master Console Route */}
+        <Route path="/master" element={<MasterPanel />} />
+
         {/* Admin Console Route */}
-        <Route path="/admin" element={<AdminApp />} />
+        <Route path="/:org/admin" element={<TenantGuard isAdminView><AdminApp /></TenantGuard>} />
         
         {/* Player App View Route */}
-        <Route path="/" element={<PlayerApp />} />
+        <Route path="/:org" element={<TenantGuard><PlayerApp /></TenantGuard>} />
 
         {/* Catch-all redirect */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/master" replace />} />
       </Routes>
     </Router>
   );

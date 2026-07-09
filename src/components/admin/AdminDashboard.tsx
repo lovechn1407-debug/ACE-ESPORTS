@@ -28,10 +28,17 @@ const AdminDashboard: React.FC = () => {
         const promosSnap = await get(ref(db, 'promotions'));
         const tourneysSnap = await get(ref(db, 'tournaments'));
 
-        const withdrawalsRef = ref(db, 'withdrawals');
-        const pendingWd = await get(query(withdrawalsRef, orderByChild('status'), equalTo('pending')));
-        const completedWd = await get(query(withdrawalsRef, orderByChild('status'), equalTo('completed')));
-        const rejectedWd = await get(query(withdrawalsRef, orderByChild('status'), equalTo('rejected')));
+        const withdrawalsSnap = await get(ref(db, 'withdrawals'));
+        let pendingSize = 0;
+        let completedSize = 0;
+        let rejectedSize = 0;
+        if (withdrawalsSnap.exists()) {
+          Object.values(withdrawalsSnap.val()).forEach((w: any) => {
+            if (w && w.status === 'pending') pendingSize++;
+            else if (w && w.status === 'completed') completedSize++;
+            else if (w && w.status === 'rejected') rejectedSize++;
+          });
+        }
 
         let activeCount = 0;
         let finishedCount = 0;
@@ -48,9 +55,9 @@ const AdminDashboard: React.FC = () => {
           totalUsers,
           activeTournaments: activeCount,
           finishedTournaments: finishedCount,
-          pendingWithdrawals: pendingWd.exists() ? pendingWd.size : 0,
-          completedWithdrawals: completedWd.exists() ? completedWd.size : 0,
-          rejectedWithdrawals: rejectedWd.exists() ? rejectedWd.size : 0,
+          pendingWithdrawals: pendingSize,
+          completedWithdrawals: completedSize,
+          rejectedWithdrawals: rejectedSize,
           totalGames: gamesSnap.exists() ? gamesSnap.size : 0,
           totalPromotions: promosSnap.exists() ? promosSnap.size : 0
         });

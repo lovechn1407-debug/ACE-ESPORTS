@@ -216,26 +216,10 @@ const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({ onClose, onViewRe
 
                       <button
                         onClick={() => onViewResults(match.tournamentId, match.tournamentName)}
-                        style={{
-                          marginLeft: 'auto', 
-                          width: '84px', 
-                          height: '30px', 
-                          padding: '0px', 
-                          borderRadius: '4px',
-                          border: '1px solid rgba(250,204,21,0.18)',
-                          background: "url('/images/results_btn_bg.webp') no-repeat center center / 100% 100%",
-                          color: '#000000', 
-                          fontSize: '0.68rem', 
-                          fontWeight: 'normal',
-                          overflow: 'hidden',
-                          cursor: 'pointer', 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center', 
-                          gap: '4px',
-                        }}
+                        className="btn-custom btn-custom-accent btn-sm mh-results-btn"
+                        style={{ marginLeft: 'auto' }}
                       >
-                        <i className="bi bi-graph-up" style={{ fontSize: '0.6rem' }}></i>
+                        <i className="bi bi-graph-up" style={{ fontSize: '0.7rem' }}></i>
                         Results
                       </button>
                     </div>
@@ -259,6 +243,12 @@ const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({ onClose, onViewRe
         @keyframes mhSlideUp {
           from { transform: translateY(40px); opacity: 0; }
           to   { transform: translateY(0);   opacity: 1; }
+        }
+        .mh-results-btn {
+          box-shadow: none !important;
+          height: 28px !important;
+          padding: 0 12px !important;
+          border-radius: 3px !important;
         }
       `}</style>
     </div>

@@ -60,10 +60,15 @@ const AdminSettings: React.FC = () => {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarFileRef = useRef<HTMLInputElement>(null);
 
-  // Banner Library
+  // Match Banner Library (used for match configurations)
   const [bannerLibrary, setBannerLibrary] = useState<{ id: string; url: string }[]>([]);
   const [bannerUploading, setBannerUploading] = useState(false);
   const bannerLibAdminRef = useRef<HTMLInputElement>(null);
+
+  // Profile Banner Library (used for user profiles backgrounds)
+  const [profileBanners, setProfileBanners] = useState<{ id: string; url: string }[]>([]);
+  const [profileBannerUploading, setProfileBannerUploading] = useState(false);
+  const profileBannerFileRef = useRef<HTMLInputElement>(null);
 
   const fetchAllData = async () => {
     setLoading(true);
@@ -133,6 +138,7 @@ const AdminSettings: React.FC = () => {
     fetchAllData();
     fetchAvatarLibrary();
     fetchBannerLibrary();
+    fetchProfileBanners();
   }, []);
 
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -360,6 +366,54 @@ const AdminSettings: React.FC = () => {
     try {
       await remove(ref(db, `uploads/banners/${id}`));
       await fetchBannerLibrary();
+    } catch (err: any) {
+      alert('Delete failed: ' + err.message);
+    }
+  };
+
+  // Fetch profile banner library
+  const fetchProfileBanners = async () => {
+    try {
+      const snap = await get(ref(db, 'uploads/profileBanners'));
+      if (snap.exists()) {
+        const list = Object.entries(snap.val()).map(([id, url]) => ({ id, url: url as string }));
+        setProfileBanners(list);
+      } else {
+        setProfileBanners([]);
+      }
+    } catch (err) {
+      console.error('Error fetching profile banners:', err);
+    }
+  };
+
+  // Upload profile banner
+  const handleProfileBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProfileBannerUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const resp = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
+      const data = await resp.json();
+      if (data.success) {
+        await push(ref(db, 'uploads/profileBanners'), data.data.url);
+        await fetchProfileBanners();
+        alert('Profile banner added to library!');
+      } else throw new Error(data.error?.message || 'Upload failed');
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    } finally {
+      setProfileBannerUploading(false);
+      if (profileBannerFileRef.current) profileBannerFileRef.current.value = '';
+    }
+  };
+
+  const handleDeleteProfileBanner = async (id: string) => {
+    if (!confirm('Remove this profile banner from the library?')) return;
+    try {
+      await remove(ref(db, `uploads/profileBanners/${id}`));
+      await fetchProfileBanners();
     } catch (err: any) {
       alert('Delete failed: ' + err.message);
     }
@@ -677,12 +731,12 @@ const AdminSettings: React.FC = () => {
         )}
       </div>
 
-      {/* ── Banner Library Card ── */}
+      {/* ── Match Banner Library Card (For Tournaments) ── */}
       <div className="card custom-card p-4 mt-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <div>
-            <h5 className="m-0 text-white">Banner Library</h5>
-            <small className="text-secondary">Banners are used as profile &amp; leaderboard backgrounds by users.</small>
+            <h5 className="m-0 text-white">Match Banner Library</h5>
+            <small className="text-secondary">Banners uploaded here can be selected when configuring match images.</small>
           </div>
           <button
             className="btn btn-success btn-sm"
@@ -691,7 +745,7 @@ const AdminSettings: React.FC = () => {
           >
             {bannerUploading
               ? <><span className="spinner-border spinner-border-sm me-1"></span>Uploading...</>
-              : <><i className="bi bi-cloud-upload-fill me-1"></i>Upload Banner</>
+              : <><i className="bi bi-cloud-upload-fill me-1"></i>Upload Match Banner</>
             }
           </button>
           <input ref={bannerLibAdminRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBannerLibraryUpload} />
@@ -700,16 +754,59 @@ const AdminSettings: React.FC = () => {
         {bannerLibrary.length === 0 ? (
           <div className="text-center text-secondary py-4">
             <i className="bi bi-image fs-2 d-block mb-2"></i>
-            No banners yet. Upload wide/landscape images for best results.
+            No match banners yet. Upload wide/landscape images for matches.
           </div>
         ) : (
           <div className="banner-library-admin-grid">
             {bannerLibrary.map(img => (
               <div key={img.id} className="banner-library-admin-item">
-                <img src={img.url} alt="Banner" />
+                <img src={img.url} alt="Match Banner" />
                 <button
                   className="avatar-library-delete-btn"
                   onClick={() => handleDeleteBannerFromLibrary(img.id)}
+                  title="Remove"
+                >
+                  <i className="bi bi-trash-fill"></i>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Profile Banner Library Card (For Users Profiles) ── */}
+      <div className="card custom-card p-4 mt-4">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 className="m-0 text-white">Profile Banner Library</h5>
+            <small className="text-secondary">Banners uploaded here are available for users to pick as their profile backgrounds.</small>
+          </div>
+          <button
+            className="btn btn-success btn-sm"
+            onClick={() => profileBannerFileRef.current?.click()}
+            disabled={profileBannerUploading}
+          >
+            {profileBannerUploading
+              ? <><span className="spinner-border spinner-border-sm me-1"></span>Uploading...</>
+              : <><i className="bi bi-cloud-upload-fill me-1"></i>Upload Profile Banner</>
+            }
+          </button>
+          <input ref={profileBannerFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleProfileBannerUpload} />
+        </div>
+
+        {profileBanners.length === 0 ? (
+          <div className="text-center text-secondary py-4">
+            <i className="bi bi-image fs-2 d-block mb-2"></i>
+            No profile banners yet. Upload wide/landscape images for users profiles.
+          </div>
+        ) : (
+          <div className="banner-library-admin-grid">
+            {profileBanners.map(img => (
+              <div key={img.id} className="banner-library-admin-item">
+                <img src={img.url} alt="Profile Banner" />
+                <button
+                  className="avatar-library-delete-btn"
+                  onClick={() => handleDeleteProfileBanner(img.id)}
                   title="Remove"
                 >
                   <i className="bi bi-trash-fill"></i>

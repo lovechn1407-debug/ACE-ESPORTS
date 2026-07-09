@@ -106,6 +106,28 @@ const Wallet: React.FC = () => {
     alert('Copied: ' + text);
   };
 
+  const handleDepositDialerClick = (numStr: string) => {
+    setRechargeError('');
+    if (numStr === 'BACK') {
+      setRechargeAmt(prev => {
+        const str = String(prev);
+        if (str.length <= 1) return 0;
+        return Number(str.slice(0, -1));
+      });
+    } else if (numStr === 'CLEAR') {
+      setRechargeAmt(0);
+    } else {
+      const str = String(rechargeAmt === 0 ? '' : rechargeAmt);
+      if (str.length >= 6) return;
+      setRechargeAmt(Number(str + numStr));
+    }
+  };
+
+  const handleDepositQuickAdd = (val: number) => {
+    setRechargeError('');
+    setRechargeAmt(prev => prev + val);
+  };
+
   const handleRechargeNext1 = () => {
     if (rechargeAmt < 10 || rechargeAmt > 1000) {
       setRechargeError('Please enter an amount between ₹10 and ₹1000.');
@@ -116,8 +138,17 @@ const Wallet: React.FC = () => {
   };
 
   const handleRechargeSubmit = async () => {
+    if (rechargeAmt < 10 || rechargeAmt > 1000) {
+      setRechargeError('Please enter an amount between ₹10 and ₹1000.');
+      setSubView('recharge_1');
+      return;
+    }
     if (!utr.trim()) {
       setRechargeError('Please enter the 12-digit UTR/Transaction ID.');
+      return;
+    }
+    if (utr.trim().length !== 12) {
+      setRechargeError('The UTR/Transaction ID must be exactly 12 digits.');
       return;
     }
     if (!currentUser) return;
@@ -668,47 +699,128 @@ const Wallet: React.FC = () => {
         </>
       )}
 
-      {/* ── Stepper Sub View ── */}
+      {/* ── Polished Stepper Deposit Panel ── */}
       {subView.startsWith('recharge') && (
         <div className="recharge-flow-container text-start">
           
           {/* Stepper Progress Bar */}
-          <div className="stepper-progress-header mb-4">
-            <div className={`step-dot ${subView === 'recharge_1' ? 'active' : 'completed'}`}>1</div>
-            <div className={`step-line ${subView !== 'recharge_1' ? 'completed' : ''}`}></div>
-            <div className={`step-dot ${subView === 'recharge_2' ? 'active' : subView === 'recharge_3' ? 'completed' : ''}`}>2</div>
-            <div className={`step-line ${subView === 'recharge_3' ? 'completed' : ''}`}></div>
-            <div className={`step-dot ${subView === 'recharge_3' ? 'active' : ''}`}>3</div>
+          <div className="stepper-progress-header mb-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <div className={`step-dot ${subView === 'recharge_1' ? 'active' : 'completed'}`} style={{
+              width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700,
+              background: subView === 'recharge_1' ? 'var(--accent-color)' : '#10B981', color: '#000'
+            }}>1</div>
+            <div className="step-line" style={{ flex: '0 0 40px', height: '2px', background: subView !== 'recharge_1' ? '#10B981' : 'rgba(255,255,255,0.1)' }}></div>
+            
+            <div className={`step-dot ${subView === 'recharge_2' ? 'active' : subView === 'recharge_3' ? 'completed' : ''}`} style={{
+              width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700,
+              background: subView === 'recharge_2' ? 'var(--accent-color)' : subView === 'recharge_3' ? '#10B981' : 'rgba(255,255,255,0.05)', color: subView === 'recharge_2' || subView === 'recharge_3' ? '#000' : '#64748B'
+            }}>2</div>
+            <div className="step-line" style={{ flex: '0 0 40px', height: '2px', background: subView === 'recharge_3' ? '#10B981' : 'rgba(255,255,255,0.1)' }}></div>
+            
+            <div className={`step-dot ${subView === 'recharge_3' ? 'active' : ''}`} style={{
+              width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700,
+              background: subView === 'recharge_3' ? 'var(--accent-color)' : 'rgba(255,255,255,0.05)', color: subView === 'recharge_3' ? '#000' : '#64748B'
+            }}>3</div>
           </div>
 
-          {/* Stepper Step 1: Input Amount */}
+          {/* Stepper Step 1: Input Amount & Presets */}
           {subView === 'recharge_1' && (
             <div className="card custom-card p-4">
-              <h5 className="mb-4 text-white text-center"><i className="bi bi-cash-coin me-2"></i>Enter Amount to Add</h5>
+              <h5 className="mb-3 text-white text-center"><i className="bi bi-cash-coin me-2"></i>Enter Amount to Add</h5>
               
-              <div className="amount-input-group mb-4">
-                <span className="currency-prefix">₹</span>
+              {/* Centered Amount Display */}
+              <div style={{
+                background: '#090F1B',
+                border: '1px solid rgba(255,255,255,0.05)',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '14px'
+              }}>
+                <span style={{ fontSize: '1.2rem', color: 'var(--accent-color)', fontWeight: 800, marginRight: '4px' }}>₹</span>
                 <input 
-                  type="number" 
-                  className="amount-field"
-                  value={rechargeAmt || ''} 
-                  onChange={(e) => setRechargeAmt(Math.min(1000, Number(e.target.value)))}
-                  placeholder="10 - 1000"
-                  min="10"
-                  max="1000"
+                  type="text" 
+                  value={rechargeAmt || ''}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/[^0-9]/g, '');
+                    setRechargeAmt(Number(cleaned));
+                  }}
+                  placeholder="0"
+                  required
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#F1F5F9',
+                    fontSize: '1.35rem',
+                    fontWeight: 800,
+                    width: '100%',
+                    textAlign: 'center',
+                    outline: 'none',
+                  }}
                 />
               </div>
 
-              <div className="amount-presets mb-4">
-                {[50, 100, 200, 500, 1000].map(val => (
-                  <button 
+              {/* Quick Presets */}
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
+                {[50, 100, 200, 500, 1000].map((val) => (
+                  <button
                     key={val}
-                    className={`preset-pill ${rechargeAmt === val ? 'active' : ''}`}
-                    onClick={() => setRechargeAmt(val)}
+                    type="button"
+                    onClick={() => handleDepositQuickAdd(val)}
+                    style={{
+                      flex: 1,
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      borderRadius: '6px',
+                      padding: '6px 4px',
+                      color: '#94A3B8',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                    }}
                   >
                     +₹{val}
                   </button>
                 ))}
+              </div>
+
+              {/* Keypad Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '16px' }}>
+                {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'].map((key) => {
+                  const isSpecial = key === 'C' || key === '⌫';
+                  const actionVal = key === 'C' ? 'CLEAR' : key === '⌫' ? 'BACK' : key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleDepositDialerClick(actionVal)}
+                      style={{
+                        background: isSpecial ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.015)',
+                        border: '1px solid rgba(255,255,255,0.04)',
+                        borderRadius: '6px',
+                        padding: '11px',
+                        color: isSpecial ? '#64748B' : '#CBD5E1',
+                        fontSize: '1.1rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      onMouseDown={(e) => {
+                        (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)';
+                        (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.96)';
+                      }}
+                      onMouseUp={(e) => {
+                        (e.currentTarget as HTMLButtonElement).style.background = isSpecial ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.015)';
+                        (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+                      }}
+                    >
+                      {key}
+                    </button>
+                  );
+                })}
               </div>
 
               {rechargeError && <div className="alert alert-danger py-2 small mb-3">{rechargeError}</div>}
@@ -731,24 +843,45 @@ const Wallet: React.FC = () => {
               
               <div className="d-flex flex-column gap-3 mb-4">
                 {[
-                  { id: 'PhonePe', label: 'PhonePe', logo: 'https://i.ibb.co/CK4YGNCd/phone-pay.png' },
-                  { id: 'Paytm', label: 'Paytm', logo: 'https://pwebassets.paytm.com/commonwebassets/ir/images/press-kit/brand.png' },
-                  { id: 'GPay', label: 'Google Pay', logo: 'https://telecomtalk.info/wp-content/uploads/2022/12/gpay-how-to-create-or-find-upi.jpg.webp' }
-                ].map(app => (
-                  <div 
-                    key={app.id} 
-                    className={`upi-app-card ${rechargeMethod === app.id ? 'active' : ''}`}
-                    onClick={() => setRechargeMethod(app.id)}
-                  >
-                    <div className="d-flex align-items-center gap-3">
-                      <img src={app.logo} alt={app.id} className="upi-logo" />
-                      <span className="fw-bold">{app.label}</span>
+                  { id: 'PhonePe', label: 'PhonePe', desc: 'Pay using PhonePe App', logo: 'https://i.ibb.co/CK4YGNCd/phone-pay.png' },
+                  { id: 'Paytm', label: 'Paytm', desc: 'Pay using Paytm Wallet/UPI', logo: 'https://pwebassets.paytm.com/commonwebassets/ir/images/press-kit/brand.png' },
+                  { id: 'GPay', label: 'Google Pay', desc: 'Pay using Google Pay', logo: 'https://telecomtalk.info/wp-content/uploads/2022/12/gpay-how-to-create-or-find-upi.jpg.webp' }
+                ].map(app => {
+                  const isSelected = rechargeMethod === app.id;
+                  return (
+                    <div 
+                      key={app.id} 
+                      className={`upi-app-card ${isSelected ? 'active' : ''}`}
+                      onClick={() => setRechargeMethod(app.id)}
+                      style={{
+                        background: isSelected ? 'rgba(99, 102, 241, 0.08)' : 'rgba(255, 255, 255, 0.015)',
+                        border: isSelected ? '1.5px solid #6366F1' : '1.5px solid rgba(255, 255, 255, 0.06)',
+                        borderRadius: '10px',
+                        padding: '14px 16px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <div className="d-flex align-items-center gap-3">
+                        <img src={app.logo} alt={app.id} style={{ width: '38px', height: '38px', borderRadius: '8px', objectFit: 'contain', background: '#fff', padding: '3px' }} />
+                        <div className="text-start">
+                          <span className="fw-bold text-white d-block" style={{ fontSize: '0.88rem' }}>{app.label}</span>
+                          <span className="text-secondary" style={{ fontSize: '0.72rem' }}>{app.desc}</span>
+                        </div>
+                      </div>
+                      <div style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        border: isSelected ? '5px solid #6366F1' : '2px solid rgba(255, 255, 255, 0.15)',
+                        transition: 'all 0.15s ease'
+                      }} />
                     </div>
-                    <div className="checkbox-ring">
-                      {rechargeMethod === app.id && <div className="checkbox-dot"></div>}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="d-flex gap-2">
@@ -762,18 +895,25 @@ const Wallet: React.FC = () => {
             </div>
           )}
 
-          {/* Stepper Step 3: View Details & Input UTR */}
+          {/* Stepper Step 3: Scan QR & Enter UTR */}
           {subView === 'recharge_3' && (
             <div className="card custom-card p-4">
               <h5 className="mb-4 text-white text-center"><i className="bi bi-qr-code-scan me-2"></i>Scan and Pay</h5>
 
               {/* QR display */}
               <div className="text-center mb-4">
-                <div className="qr-wrapper-glow mx-auto mb-3">
+                <div style={{
+                  background: 'white',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  display: 'inline-block',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+                  marginBottom: '16px'
+                }}>
                   <img 
                     src={settings.qrCodeUrl || 'https://placehold.co/600x400?text=Loading+QR'} 
                     alt="Scan UPI QR Code" 
-                    className="qr-img"
+                    style={{ width: '130px', height: '130px', objectFit: 'contain' }}
                   />
                 </div>
                 <div className="small text-secondary mb-1">UPI ID: <strong className="text-accent">{settings.upiDetails || '8383090874@fam'}</strong></div>
@@ -781,15 +921,15 @@ const Wallet: React.FC = () => {
               </div>
 
               <div className="d-flex gap-2 mb-4">
-                <button className="btn btn-sm btn-outline-secondary w-50" onClick={() => copyToClipboard(String(rechargeAmt))}>
+                <button type="button" className="btn btn-sm btn-outline-secondary w-50" onClick={() => copyToClipboard(String(rechargeAmt))}>
                   <i className="bi bi-clipboard-check me-1"></i> Copy Amt
                 </button>
-                <button className="btn btn-sm btn-outline-secondary w-50" onClick={() => copyToClipboard(settings.upiDetails || '8383090874@fam')}>
+                <button type="button" className="btn btn-sm btn-outline-secondary w-50" onClick={() => copyToClipboard(settings.upiDetails || '8383090874@fam')}>
                   <i className="bi bi-clipboard-check me-1"></i> Copy UPI
                 </button>
               </div>
 
-              <div className="form-group mb-4">
+              <div className="form-group mb-4 text-start">
                 <label className="form-label text-warning small fw-bold">Enter 12-Digit Payment UTR / Ref Number</label>
                 <input 
                   type="text" 
@@ -798,6 +938,13 @@ const Wallet: React.FC = () => {
                   onChange={(e) => setUtr(e.target.value.replace(/\D/g, '').substring(0, 12))}
                   placeholder="e.g. 302829402948"
                   required
+                  style={{
+                    background: '#090F1B',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    color: '#F1F5F9',
+                    padding: '11px',
+                    fontSize: '0.85rem',
+                  }}
                 />
                 <small className="text-secondary d-block mt-1">Submit the correct UTR to avoid request cancellations.</small>
               </div>

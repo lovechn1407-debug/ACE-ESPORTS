@@ -18,19 +18,13 @@ const Leaderboard: React.FC = () => {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const leaderboardQuery = query(
-          ref(db, 'users'),
-          orderByChild('leaderboardRank'),
-          limitToFirst(100)
-        );
-        const snapshot = await get(leaderboardQuery);
+        const snapshot = await get(ref(db, 'users'));
         if (snapshot.exists()) {
           const users: LeaderboardUser[] = [];
-          snapshot.forEach((child) => {
-            const val = child.val();
+          Object.entries(snapshot.val()).forEach(([uid, val]: any) => {
             if (val && val.leaderboardRank) {
               users.push({
-                uid: child.key as string,
+                uid,
                 displayName: val.displayName || 'Player',
                 photoURL: val.photoURL,
                 appliedBadgeUrl: val.appliedBadgeUrl || '',
@@ -40,7 +34,7 @@ const Leaderboard: React.FC = () => {
             }
           });
           users.sort((a, b) => a.leaderboardRank - b.leaderboardRank);
-          setList(users);
+          setList(users.slice(0, 100));
         }
       } catch (err) {
         console.error('Error fetching leaderboard:', err);

@@ -47,13 +47,11 @@ const AdminAnalytics: React.FC = () => {
       };
 
       // 2. Fetch completed deposits for Top Spenders
-      const depositsQuery = query(ref(db, 'deposits'), orderByChild('status'), equalTo('completed'));
-      const depositsSnap = await get(depositsQuery);
+      const depositsSnap = await get(ref(db, 'deposits'));
       const spendersMap: Record<string, number> = {};
       if (depositsSnap.exists()) {
-        depositsSnap.forEach(child => {
-          const d = child.val();
-          if (d.userId && d.amount) {
+        Object.values(depositsSnap.val()).forEach((d: any) => {
+          if (d && d.status === 'completed' && d.userId && d.amount) {
             spendersMap[d.userId] = (spendersMap[d.userId] || 0) + d.amount;
           }
         });

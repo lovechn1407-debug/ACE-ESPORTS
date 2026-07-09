@@ -124,7 +124,9 @@ const AdminUsers: React.FC = () => {
 
     try {
       await runTransaction(userRef, (profData) => {
-        if (!profData) throw new Error('User profile not found.');
+        if (profData === null) {
+          return profData;
+        }
 
         const currentVal = Number(profData[walletType] || 0);
         const nextVal = currentVal + actualAdjustment;

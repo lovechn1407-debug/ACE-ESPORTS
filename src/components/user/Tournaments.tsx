@@ -106,6 +106,14 @@ const Tournaments: React.FC<TournamentsProps> = ({
   const [resultsPlayersList, setResultsPlayersList] = useState<any[]>([]);
   const [loadingResults, setLoadingResults] = useState(false);
 
+  // Cancelled matches local dismissal tracking
+  const [dismissedTournaments, setDismissedTournaments] = useState<string[]>([]);
+
+  const handleDismissCancelled = (id: string) => {
+    localStorage.setItem(`dismissed_cancelled_match_${id}`, 'true');
+    setDismissedTournaments([...dismissedTournaments, id]);
+  };
+
   // Reporting states
   const [accusedPlayerUid, setAccusedPlayerUid] = useState('');
   const [reportType, setReportType] = useState('');
@@ -120,7 +128,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
       setLoading(true);
       try {
         const [tourneysSnap, settingsSnap] = await Promise.all([
-          get(query(ref(db, 'tournaments'), orderByChild('gameId'), equalTo(gameId))),
+          get(ref(db, 'tournaments')),
           get(ref(db, 'settings/registrationMode'))
         ]);
 
@@ -131,8 +139,15 @@ const Tournaments: React.FC<TournamentsProps> = ({
         if (tourneysSnap.exists()) {
           const list: Tournament[] = Object.entries(tourneysSnap.val())
             .map(([id, val]: any) => ({ id, ...val }))
+            .filter((t: any) => t.gameId === gameId)
             .filter((t: any) => {
-              if (activeTab === 'upcoming') return t.status === 'upcoming';
+              if (activeTab === 'upcoming') {
+                if (t.status === 'upcoming') return true;
+                const wasRegistered = currentUser && t.registeredPlayers && t.registeredPlayers[currentUser.uid];
+                const isRecentCancelled = t.status === 'cancelled' && t.cancelledAt && (Date.now() - t.cancelledAt < 5 * 60 * 60 * 1000);
+                const notDismissed = !dismissedTournaments.includes(t.id) && !localStorage.getItem(`dismissed_cancelled_match_${t.id}`);
+                return wasRegistered && isRecentCancelled && notDismissed;
+              }
               if (activeTab === 'ongoing') return t.status === 'ongoing';
               return t.status === 'completed' || t.status === 'result' || t.status === 'cancelled';
             });
@@ -153,7 +168,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
       }
     };
     fetchData();
-  }, [gameId, activeTab]);
+  }, [gameId, activeTab, dismissedTournaments]);
 
   // Hacky wrapper to fix state type checks
   const setSetTournaments = (val: Tournament[]) => {
@@ -588,7 +603,8 @@ const Tournaments: React.FC<TournamentsProps> = ({
                 (t.status === 'upcoming' && t.showIdPass && Date.now() > t.startTime - 900000);
 
               let timerTxt = t.status?.toUpperCase() || 'N/A';
-              if (t.status === 'upcoming') timerTxt = getTimeRemaining(t.startTime);
+              if (t.status === 'cancelled') timerTxt = 'CANCELLED';
+              else if (t.status === 'upcoming') timerTxt = getTimeRemaining(t.startTime);
               else if (t.status === 'ongoing') timerTxt = 'LIVE';
               else if (t.status === 'completed' || t.status === 'result') timerTxt = 'ENDED';
 
@@ -611,7 +627,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                         {t.mode && <span>{t.mode}</span>}
                         {t.map && <span>{t.map}</span>}
                       </div>
-                      <div className="tournament-card-timer">{timerTxt}</div>
+                      <div className="tournament-card-timer" style={{ color: t.status === 'cancelled' ? '#EF4444' : undefined }}>{timerTxt}</div>
                     </div>
                     
                     <h3 className="tournament-card-title">
@@ -639,80 +655,111 @@ const Tournaments: React.FC<TournamentsProps> = ({
                       </div>
                     </div>
 
-                    {maxP > 0 && (
-                      <div className="tournament-card-spots">
-                        <div className="d-flex justify-content-between mb-1">
-                          <span>{spotsTxt}</span>
-                        </div>
-                        <div className="progress">
-                          <div 
-                            className="progress-bar" 
-                            style={{ width: `${progP}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="tournament-card-actions">
-                      <button 
-                        className="btn-custom btn-custom-secondary btn-sm"
-                        onClick={() => handleOpenDetails(t)}
+                    {t.status === 'cancelled' ? (
+                      <div 
+                        className="w-100 mt-3 d-flex justify-content-between align-items-center" 
+                        style={{ 
+                          borderRadius: '8px', 
+                          padding: '10px 12px', 
+                          border: '1px solid rgba(239, 68, 68, 0.2)', 
+                          background: 'rgba(239, 68, 68, 0.06)' 
+                        }}
                       >
-                        Rules
-                      </button>
+                        <div className="text-start">
+                          <strong className="text-danger small d-block mb-0.5" style={{ fontSize: '0.76rem', fontWeight: 700 }}>
+                            <i className="bi bi-x-circle-fill me-1.5"></i>Match Cancelled
+                          </strong>
+                          <span className="text-secondary" style={{ fontSize: '0.7rem', display: 'block', lineHeight: '1.3' }}>
+                            A refund of ₹{t.entryFee} has been credited to your wallet.
+                          </span>
+                        </div>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDismissCancelled(t.id); }} 
+                          className="btn btn-sm btn-link text-secondary p-0 text-decoration-none ms-2"
+                          style={{ fontSize: '1.25rem', lineHeight: '1', fontWeight: 'bold' }}
+                          title="Dismiss notice"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        {maxP > 0 && (
+                          <div className="tournament-card-spots">
+                            <div className="d-flex justify-content-between mb-1">
+                              <span>{spotsTxt}</span>
+                            </div>
+                            <div className="progress">
+                              <div 
+                                className="progress-bar" 
+                                style={{ width: `${progP}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
 
-                      {isJoined ? (
-                        <>
+                        <div className="tournament-card-actions">
                           <button 
-                            className="btn-custom btn-custom-primary btn-sm btn-view-players"
-                            onClick={() => handleOpenPlayers(t)}
+                            className="btn-custom btn-custom-secondary btn-sm"
+                            onClick={() => handleOpenDetails(t)}
                           >
-                            <i className="bi bi-eye-fill"></i> View Players
+                            Rules
                           </button>
-                          
-                          {(t.status === 'upcoming' || t.status === 'ongoing') && (
+
+                          {isJoined ? (
+                            <>
+                              <button 
+                                className="btn-custom btn-custom-primary btn-sm btn-view-players"
+                                onClick={() => handleOpenPlayers(t)}
+                              >
+                                <i className="bi bi-eye-fill"></i> View Players
+                              </button>
+                              
+                              {(t.status === 'upcoming' || t.status === 'ongoing') && (
+                                <button 
+                                  className="btn-custom btn-custom-secondary btn-sm btn-chat"
+                                  onClick={() => onOpenChat(t.id, t.name)}
+                                >
+                                  <i className="bi bi-chat-dots-fill"></i> Chat
+                                </button>
+                              )}
+                            </>
+                          ) : t.status === 'upcoming' ? (
                             <button 
-                              className="btn-custom btn-custom-secondary btn-sm btn-chat"
-                              onClick={() => onOpenChat(t.id, t.name)}
+                              className="btn-custom btn-custom-accent btn-sm btn-join"
+                              onClick={() => handleOpenJoin(t)}
+                              disabled={isFull}
                             >
-                              <i className="bi bi-chat-dots-fill"></i> Chat
+                              {isFull ? 'Match Full' : `₹${t.entryFee} Join`}
+                            </button>
+                          ) : (
+                            <button 
+                              className="btn-custom btn-custom-secondary btn-sm btn-disabled"
+                              disabled
+                            >
+                              Closed
                             </button>
                           )}
-                        </>
-                      ) : t.status === 'upcoming' ? (
-                        <button 
-                          className="btn-custom btn-custom-accent btn-sm btn-join"
-                          onClick={() => handleOpenJoin(t)}
-                          disabled={isFull}
-                        >
-                          {isFull ? 'Match Full' : `₹${t.entryFee} Join`}
-                        </button>
-                      ) : (
-                        <button 
-                          className="btn-custom btn-custom-secondary btn-sm btn-disabled"
-                          disabled
-                        >
-                          Closed
-                        </button>
-                      )}
 
-                      {(t.status === 'completed' || t.status === 'result') && (
-                        <button 
-                          className="btn-custom btn-custom-accent btn-sm"
-                          onClick={() => handleOpenResults(t)}
-                        >
-                          Results
-                        </button>
-                      )}
-                    </div>
+                          {(t.status === 'completed' || t.status === 'result') && (
+                            <button 
+                              className="btn-custom btn-custom-accent btn-sm"
+                              onClick={() => handleOpenResults(t)}
+                            >
+                              Results
+                            </button>
+                          )}
+                        </div>
 
-                    {isJoined && showIdBtn && (
-                      <button 
-                        className="btn-custom btn-idpass w-100 mt-2 btn-sm"
-                        onClick={() => handleOpenIdPass(t)}
-                      >
-                        <i className="bi bi-key-fill"></i> View ID & Pass
-                      </button>
+                        {isJoined && showIdBtn && (
+                          <button 
+                            className="btn-custom btn-idpass w-100 mt-2 btn-sm"
+                            onClick={() => handleOpenIdPass(t)}
+                          >
+                            <i className="bi bi-key-fill"></i> View ID & Pass
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

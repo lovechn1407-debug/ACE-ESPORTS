@@ -57,7 +57,7 @@ const Profile: React.FC<ProfileProps> = ({ onOpenPolicy, onOpenMatchHistory, onL
   const fetchBannerLibrary = async () => {
     setBannerLibraryLoading(true);
     try {
-      const snap = await get(ref(db, 'uploads/banners'));
+      const snap = await get(ref(db, 'uploads/profileBanners'));
       if (snap.exists()) {
         setBannerLibrary(Object.entries(snap.val()).map(([id, url]) => ({ id, url: url as string })));
       } else setBannerLibrary([]);

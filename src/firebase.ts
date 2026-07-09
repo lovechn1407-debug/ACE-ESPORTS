@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyDh1mutPmoOoigDDIiZxvGoqmrA18zlABE",
   authDomain: "fftournament-bv.firebaseapp.com",
   databaseURL: "https://fftournament-bv-default-rtdb.firebaseio.com",

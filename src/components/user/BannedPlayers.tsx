@@ -23,20 +23,20 @@ const BannedPlayers: React.FC<BannedPlayersProps> = ({ onBack }) => {
   useEffect(() => {
     const fetchBannedPlayers = async () => {
       try {
-        const bannedQuery = query(ref(db, 'users'), orderByChild('status'), equalTo('blocked'));
-        const snap = await get(bannedQuery);
+        const snap = await get(ref(db, 'users'));
         const list: BannedPlayer[] = [];
         if (snap.exists()) {
-          snap.forEach(child => {
-            const val = child.val();
-            list.push({
-              uid: child.key as string,
-              displayName: val.displayName || 'Unnamed Player',
-              photoURL: val.photoURL || '',
-              appliedBadgeUrl: val.appliedBadgeUrl || '',
-              blockReason: val.blockReason || 'Violation of fair play policies.',
-              gameUid: val.gameUid || ''
-            });
+          Object.entries(snap.val()).forEach(([uid, val]: any) => {
+            if (val && val.status === 'blocked') {
+              list.push({
+                uid,
+                displayName: val.displayName || 'Unnamed Player',
+                photoURL: val.photoURL || '',
+                appliedBadgeUrl: val.appliedBadgeUrl || '',
+                blockReason: val.blockReason || 'Violation of fair play policies.',
+                gameUid: val.gameUid || ''
+              });
+            }
           });
         }
         setPlayers(list);
