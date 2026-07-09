@@ -1201,7 +1201,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                   src={player.photoURL || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(player.username || player.displayName)}`} 
                                   alt="avatar" 
                                   className="w-100 h-100 object-fit-cover"
-                                  style={{ border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: '4px' }}
+                                  style={{ border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: '0px' }}
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(player.uid)}`;
                                   }}
@@ -1300,7 +1300,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                       src={team.photoURL || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.username || team.displayName)}`} 
                                       alt="avatar" 
                                       className="w-100 h-100 object-fit-cover"
-                                      style={{ border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: '4px' }}
+                                      style={{ border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: '0px' }}
                                       onError={(e) => {
                                         (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.uid)}`;
                                       }}
@@ -1426,7 +1426,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                     src={team.photoURL || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.username || team.displayName)}`} 
                                     alt="avatar" 
                                     className="w-100 h-100 object-fit-cover"
-                                    style={{ border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: '4px' }}
+                                    style={{ border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: '0px' }}
                                     onError={(e) => {
                                       (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.uid)}`;
                                     }}
