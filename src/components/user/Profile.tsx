@@ -299,24 +299,22 @@ const Profile: React.FC<ProfileProps> = ({ onOpenPolicy, onOpenMatchHistory, onL
 
             {/* Badge overlay - Lies half inside and half outside at bottom right corner */}
             {(userProfile as any)?.appliedBadgeUrl && (
-              <span style={{
-                position: 'absolute',
-                bottom: '-10px',
-                right: '-10px',
-                zIndex: 10,
-                background: 'rgba(15,23,42,0.95)',
-                borderRadius: '50%',
-                padding: '2px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1.5px solid #FACC15',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
-              }}>
+              <span 
+                className="badge-sweep-wrap" 
+                style={{
+                  position: 'absolute',
+                  bottom: '-10px',
+                  right: '-10px',
+                  zIndex: 10,
+                  width: '24px',
+                  height: '24px',
+                  display: 'block'
+                }}
+              >
                 <img
                   src={(userProfile as any).appliedBadgeUrl}
                   alt="Badge"
-                  style={{ width: '20px', height: '20px' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
               </span>
             )}
@@ -457,11 +455,22 @@ const Profile: React.FC<ProfileProps> = ({ onOpenPolicy, onOpenMatchHistory, onL
                 className="profile-avatar"
               />
               {(userProfile as any)?.appliedBadgeUrl && (
-                <span className="badge-sweep-wrap">
+                <span 
+                  className="badge-sweep-wrap" 
+                  style={{
+                    position: 'absolute',
+                    bottom: '-4px',
+                    right: '-4px',
+                    zIndex: 5,
+                    width: '28px',
+                    height: '28px',
+                    display: 'block'
+                  }}
+                >
                   <img
                     src={(userProfile as any).appliedBadgeUrl}
                     alt="Badge"
-                    style={{ width: '28px', height: '28px' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                   />
                 </span>
               )}
