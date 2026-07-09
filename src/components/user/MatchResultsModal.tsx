@@ -8,6 +8,7 @@ interface MatchResultsModalProps {
   tournamentName: string;
   onClose: () => void;
   onBack?: () => void; // optional back to match history
+  onReportClick?: () => void;
 }
 
 interface ResultEntry {
@@ -34,7 +35,7 @@ const hexToRgbStr = (hex: string): string => {
   return `${r}, ${g}, ${b}`;
 };
 
-const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tournamentName, onClose, onBack }) => {
+const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tournamentName, onClose, onBack, onReportClick }) => {
   const { currentUser } = useAuth();
   const [results, setResults] = useState<ResultEntry[]>([]);
   const [mode, setMode] = useState<'Solo' | 'Duo' | 'Squad'>('Solo');
@@ -402,6 +403,55 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
               <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>Results not published yet</div>
               <div style={{ fontSize: '0.74rem', color: '#1E293B', marginTop: '4px' }}>Check back after the match ends.</div>
             </div>
+          )}
+        </div>
+
+        {/* Footer buttons */}
+        <div style={{
+          display: 'flex', gap: '8px',
+          padding: '12px 18px 16px',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          flexShrink: 0,
+          background: 'rgba(0,0,0,0.2)',
+        }}>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1,
+              padding: '10px',
+              borderRadius: '8px',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.06)',
+              color: '#CBD5E1',
+              fontWeight: 600,
+              fontSize: '0.82rem',
+              cursor: 'pointer',
+            }}
+          >
+            Close
+          </button>
+          {onReportClick && currentUser && results.some(p => p.uid === currentUser.uid) && (
+            <button
+              onClick={onReportClick}
+              style={{
+                flex: 1,
+                padding: '10px',
+                borderRadius: '8px',
+                border: '1px solid rgba(239,68,68,0.3)',
+                background: 'rgba(239,68,68,0.1)',
+                color: '#F87171',
+                fontWeight: 600,
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+              }}
+            >
+              <i className="bi bi-flag-fill" style={{ fontSize: '0.75rem' }}></i>
+              Report Player
+            </button>
           )}
         </div>
       </div>

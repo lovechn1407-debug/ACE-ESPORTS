@@ -10,6 +10,7 @@ import {
 } from 'firebase/database';
 import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
+import MatchResultsModal from './MatchResultsModal';
 
 interface TournamentsProps {
   gameId: string;
@@ -44,7 +45,7 @@ interface Tournament {
 
 const IMGBB_API_KEY = '17524c13e2cca244c03f6ad0db42e5e0';
 
-/** Convert "#RRGGBB" → "R, G, B" for CSS rgba() */
+/** Convert "#RRGGBB" â†’ "R, G, B" for CSS rgba() */
 const hexToRgbStr = (hex: string): string => {
   const clean = (hex || '#FFFFFF').replace('#', '');
   const r = parseInt(clean.substring(0, 2), 16) || 255;
@@ -113,8 +114,6 @@ const Tournaments: React.FC<TournamentsProps> = ({
   // Players list state
   const [registeredPlayersList, setRegisteredPlayersList] = useState<any[]>([]);
   const [loadingPlayers, setLoadingPlayers] = useState(false);
-  const [resultsPlayersList, setResultsPlayersList] = useState<any[]>([]);
-  const [loadingResults, setLoadingResults] = useState(false);
 
   // Cancelled matches local dismissal tracking
   const [dismissedTournaments, setDismissedTournaments] = useState<string[]>([]);
@@ -286,32 +285,9 @@ const Tournaments: React.FC<TournamentsProps> = ({
   };
 
   // Open Results Modal
-  const handleOpenResults = async (t: Tournament) => {
+  const handleOpenResults = (t: Tournament) => {
     setSelectedTourney(t);
     setShowResultsModal(true);
-    setLoadingResults(true);
-    setResultsPlayersList([]);
-    try {
-      const raw = t.fullResults || [];
-      if (raw.length > 0) {
-        const promises = raw.map(p => get(ref(db, `users/${p.uid}`)));
-        const snaps = await Promise.all(promises);
-        const list = raw.map((p, idx) => {
-          const s = snaps[idx];
-          return {
-            ...p,
-            photoURL: s.exists() ? (s.val().photoURL || p.photoURL) : p.photoURL,
-            appliedBadgeUrl: s.exists() ? (s.val().appliedBadgeUrl || '') : ''
-          };
-        });
-        list.sort((a, b) => (a.rank || 999) - (b.rank || 999));
-        setResultsPlayersList(list);
-      }
-    } catch (err) {
-      console.error('Error fetching results users metadata:', err);
-    } finally {
-      setLoadingResults(false);
-    }
   };
 
   // Open Report Modal
@@ -347,7 +323,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
       if ((coupon.timesUsed || 0) >= coupon.maxUses) throw new Error('Coupon has reached its limit.');
       if (uSnap.exists()) throw new Error('You have already used this coupon.');
       if (selectedTourney.entryFee < coupon.minEntryFee) {
-        throw new Error(`Minimum entry fee for this code is ₹${coupon.minEntryFee}.`);
+        throw new Error(`Minimum entry fee for this code is â‚¹${coupon.minEntryFee}.`);
       }
 
       let discount = 0;
@@ -359,7 +335,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
 
       setAppliedCoupon({ code, discount });
       setCouponMsg({ 
-        text: `Success! ₹${discount.toFixed(2)} discount applied.`, 
+        text: `Success! â‚¹${discount.toFixed(2)} discount applied.`, 
         type: 'success' 
       });
     } catch (err: any) {
@@ -529,7 +505,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
         tournamentId: selectedTourney.id
       });
 
-      alert(`Successfully registered! ₹${totalFee.toFixed(2)} deducted.`);
+      alert(`Successfully registered! â‚¹${totalFee.toFixed(2)} deducted.`);
       setShowJoinModal(false);
 
       // Refresh list
@@ -707,16 +683,16 @@ const Tournaments: React.FC<TournamentsProps> = ({
                     <div className="tournament-card-info">
                       <div className="info-item">
                         <span>Prize Pool</span>
-                        <strong><i className="bi bi-trophy-fill text-accent prize-icon"></i> ₹{t.prizePool}</strong>
+                        <strong><i className="bi bi-trophy-fill text-accent prize-icon"></i> â‚¹{t.prizePool}</strong>
                       </div>
                       <div className="info-item">
                         <span>Per Kill</span>
-                        <strong>₹{t.perKillPrize}</strong>
+                        <strong>â‚¹{t.perKillPrize}</strong>
                       </div>
                       <div className="info-item">
                         <span>Entry Fee</span>
                         <strong className={t.entryFee > 0 ? 'text-info' : ''}>
-                          {t.entryFee > 0 ? `₹${t.entryFee}` : 'Free'}
+                          {t.entryFee > 0 ? `â‚¹${t.entryFee}` : 'Free'}
                         </strong>
                       </div>
                     </div>
@@ -736,7 +712,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                             <i className="bi bi-x-circle-fill me-1.5"></i>Match Cancelled
                           </strong>
                           <span className="text-secondary" style={{ fontSize: '0.7rem', display: 'block', lineHeight: '1.3' }}>
-                            A refund of ₹{t.entryFee} has been credited to your wallet.
+                            A refund of â‚¹{t.entryFee} has been credited to your wallet.
                           </span>
                         </div>
                         <button 
@@ -796,7 +772,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                               onClick={() => handleOpenJoin(t)}
                               disabled={isFull}
                             >
-                              {isFull ? 'Match Full' : `₹${t.entryFee} Join`}
+                              {isFull ? 'Match Full' : `â‚¹${t.entryFee} Join`}
                             </button>
                           ) : (
                             <button 
@@ -927,7 +903,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                   <i className="bi bi-ticket-perforated" style={{ color: '#FACC15', fontSize: '1rem', display: 'block', marginBottom: '4px' }}></i>
                   <div style={{ fontSize: '0.62rem', color: '#475569', textTransform: 'uppercase', fontWeight: 600 }}>Entry Fee</div>
                   <strong style={{ fontSize: '0.76rem', color: '#FDE68A', display: 'block', marginTop: '2px' }}>
-                    {selectedTourney.entryFee > 0 ? `₹${selectedTourney.entryFee}` : 'Free'}
+                    {selectedTourney.entryFee > 0 ? `â‚¹${selectedTourney.entryFee}` : 'Free'}
                   </strong>
                 </div>
               </div>
@@ -944,7 +920,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                   <i className="bi bi-crosshair" style={{ color: '#F87171', fontSize: '1.15rem' }}></i>
                   <div>
                     <span style={{ fontSize: '0.62rem', color: '#64748B', display: 'block' }}>Per Kill Reward</span>
-                    <strong style={{ fontSize: '1.15rem', fontWeight: 800, color: '#F87171', lineHeight: '1.2', display: 'block' }}>₹{selectedTourney.perKillPrize}</strong>
+                    <strong style={{ fontSize: '1.15rem', fontWeight: 800, color: '#F87171', lineHeight: '1.2', display: 'block' }}>â‚¹{selectedTourney.perKillPrize}</strong>
                   </div>
                 </div>
                 <div style={{
@@ -954,7 +930,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                   <i className="bi bi-wallet2" style={{ color: '#4ADE80', fontSize: '1.15rem' }}></i>
                   <div>
                     <span style={{ fontSize: '0.62rem', color: '#64748B', display: 'block' }}>Total Prize Pool</span>
-                    <strong style={{ fontSize: '1.15rem', fontWeight: 800, color: '#4ADE80', lineHeight: '1.2', display: 'block' }}>₹{selectedTourney.prizePool}</strong>
+                    <strong style={{ fontSize: '1.15rem', fontWeight: 800, color: '#4ADE80', lineHeight: '1.2', display: 'block' }}>â‚¹{selectedTourney.prizePool}</strong>
                   </div>
                 </div>
               </div>
@@ -1026,7 +1002,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                               Rank {rankStr}
                             </span>
                           </div>
-                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: (parsedNum === 1 || isRange) ? '#FACC15' : '#E2E8F0' }}>₹{Number(prize).toFixed(0)}</span>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: (parsedNum === 1 || isRange) ? '#FACC15' : '#E2E8F0' }}>â‚¹{Number(prize).toFixed(0)}</span>
                         </div>
                       );
                     });
@@ -1049,7 +1025,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                 border: '1px solid rgba(255,255,255,0.04)', borderLeft: '3px solid #FACC15',
                 borderRadius: '0 6px 6px 0', fontSize: '0.78rem', whiteSpace: 'pre-line', lineHeight: '1.6'
               }}>
-                {selectedTourney.description || '• Cheating / hacking is strictly prohibited.\n• Team-up leads to instant ban without refund.\n• Room ID and Password will be shared 15 mins prior.'}
+                {selectedTourney.description || 'â€¢ Cheating / hacking is strictly prohibited.\nâ€¢ Team-up leads to instant ban without refund.\nâ€¢ Room ID and Password will be shared 15 mins prior.'}
               </div>
             </div>
             
@@ -1174,7 +1150,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                 <div>
                   {registeredPlayersList.length > 0 ? (
                     selectedTourney.mode === 'Solo' ? (
-                      /* ───── SOLO MODE LIST ───── */
+                      /* â”€â”€â”€â”€â”€ SOLO MODE LIST â”€â”€â”€â”€â”€ */
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {registeredPlayersList.map((player, idx) => (
                           <div
@@ -1250,7 +1226,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                         ))}
                       </div>
                     ) : selectedTourney.mode === 'Duo' ? (
-                      /* ───── DUO MODE (EXACT 2.png) ───── */
+                      /* â”€â”€â”€â”€â”€ DUO MODE (EXACT 2.png) â”€â”€â”€â”€â”€ */
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {registeredPlayersList.map((team, idx) => (
                           <div 
@@ -1390,7 +1366,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                         ))}
                       </div>
                     ) : (
-                      /* ───── SQUAD MODE (EXACT 1.png) ───── */
+                      /* â”€â”€â”€â”€â”€ SQUAD MODE (EXACT 1.png) â”€â”€â”€â”€â”€ */
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {registeredPlayersList.map((team, idx) => (
                           <div 
@@ -1624,7 +1600,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                   <i className="bi bi-wallet2" style={{ color: '#38BDF8', fontSize: '1.05rem' }}></i>
                   <div>
                     <span style={{ fontSize: '0.62rem', color: '#64748B', display: 'block', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Your Balance</span>
-                    <strong style={{ fontSize: '0.9rem', color: '#CBD5E1' }}>₹{userProfile?.balance?.toFixed(2) || '0.00'}</strong>
+                    <strong style={{ fontSize: '0.9rem', color: '#CBD5E1' }}>â‚¹{userProfile?.balance?.toFixed(2) || '0.00'}</strong>
                   </div>
                 </div>
                 <span style={{ fontSize: '0.62rem', background: 'rgba(56, 189, 248, 0.12)', color: '#38BDF8', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>Esports Wallet</span>
@@ -1640,7 +1616,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
               }}>
                 <span style={{ fontSize: '0.74rem', color: '#94A3B8' }}>Deduction Entry Fee</span>
                 <strong style={{ fontSize: '1rem', color: '#FACC15' }}>
-                  ₹{(() => {
+                  â‚¹{(() => {
                     const fee = selectedTourney.entryFee;
                     const baseFee = selectedTourney.mode === 'Duo' ? fee * 2 : fee;
                     return appliedCoupon ? Math.max(0, baseFee - appliedCoupon.discount).toFixed(0) : baseFee.toFixed(0);
@@ -1649,7 +1625,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
               </div>
 
               {registrationMode === 'api' ? (
-                /* ───── API VERIFY MODE ───── */
+                /* â”€â”€â”€â”€â”€ API VERIFY MODE â”€â”€â”€â”€â”€ */
                 <>
                   {/* UID Entry + Fetch */}
                   <div style={{ marginBottom: '16px' }}>
@@ -1748,7 +1724,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                     )
                   )}
 
-                  {/* Promo Coupons + Duo Details — only loaded after verification */}
+                  {/* Promo Coupons + Duo Details â€” only loaded after verification */}
                   {fetchedPlayer && fetchedPlayer.banStatus !== 'Banned' && (
                     <>
                       {/* Coupon Code section */}
@@ -1850,7 +1826,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                   )}
                 </>
               ) : (
-                /* ───── MANUAL ENTRY MODE ───── */
+                /* â”€â”€â”€â”€â”€ MANUAL ENTRY MODE â”€â”€â”€â”€â”€ */
                 <>
                   <div style={{ marginBottom: '14px' }}>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#94A3B8', marginBottom: '6px' }}>Your Game Username (IGN)</label>
@@ -2064,305 +2040,283 @@ const Tournaments: React.FC<TournamentsProps> = ({
         </div>
       )}
 
-      {/* Results Modal Overlay */}
+      {/* Results Modal â€” uses shared MatchResultsModal component */}
       {showResultsModal && selectedTourney && (
+        <MatchResultsModal
+          tournamentId={selectedTourney.id}
+          tournamentName={selectedTourney.name}
+          onClose={() => setShowResultsModal(false)}
+          onReportClick={
+            currentUser && selectedTourney.fullResults?.some(p => p.uid === currentUser.uid)
+              ? handleOpenReport
+              : undefined
+          }
+        />
+      )}
+
+      {/* Redesigned Report Player Modal */}
+      {showReportModal && selectedTourney && (
         <div
-          onClick={(e) => { if (e.target === e.currentTarget) setShowResultsModal(false); }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowReportModal(false); }}
           className="position-fixed top-0 start-0 w-100 h-100"
-          style={{
-            zIndex: 1050,
-            background: 'rgba(0,0,0,0.72)',
-            backdropFilter: 'blur(6px)',
-            WebkitBackdropFilter: 'blur(6px)',
-          }}
+          style={{ zIndex: 1060, background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
         >
           {/* Bottom sheet */}
           <div style={{
             position: 'absolute', bottom: 0, left: 0, right: 0,
-            maxHeight: '91vh',
-            background: '#0D1526',
-            borderTop: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: '14px 14px 0 0',
+            maxHeight: '92vh',
+            background: 'linear-gradient(180deg, #0F1526 0%, #0A0F1E 100%)',
+            borderTop: '1px solid rgba(239,68,68,0.2)',
+            borderRadius: '20px 20px 0 0',
             display: 'flex', flexDirection: 'column',
-            animation: 'mhSlideUp 0.3s cubic-bezier(0.22,1,0.36,1)',
             overflow: 'hidden',
+            animation: 'mhSlideUp 0.3s cubic-bezier(0.22,1,0.36,1)',
           }}>
-            {/* Drag handle */}
-            <div style={{ width: '36px', height: '3px', background: 'rgba(255,255,255,0.12)', borderRadius: '99px', margin: '10px auto 0', flexShrink: 0 }} />
+
+            {/* Drag Handle */}
+            <div style={{ width: '36px', height: '4px', background: 'rgba(239,68,68,0.3)', borderRadius: '99px', margin: '12px auto 0', flexShrink: 0 }} />
 
             {/* Header */}
             <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '14px 18px 12px',
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              display: 'flex', alignItems: 'center', gap: '12px',
+              padding: '16px 20px 14px',
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
               flexShrink: 0,
             }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#E2E8F0', letterSpacing: '-0.01em' }}>
+              <div style={{
+                width: '38px', height: '38px', borderRadius: '10px',
+                background: 'rgba(239,68,68,0.12)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <i className="bi bi-flag-fill" style={{ color: '#F87171', fontSize: '1rem' }}></i>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#F1F5F9' }}>Report a Player</div>
+                <div style={{ fontSize: '0.7rem', color: '#64748B', marginTop: '1px' }}>
                   {selectedTourney.name}
-                </div>
-                <div style={{ fontSize: '0.7rem', color: '#475569', marginTop: '1px' }}>
-                  Match Results · {resultsPlayersList.length} players
                 </div>
               </div>
               <button
-                onClick={() => setShowResultsModal(false)}
+                onClick={() => setShowReportModal(false)}
                 style={{
-                  width: '30px', height: '30px', borderRadius: '6px',
-                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                  width: '32px', height: '32px', borderRadius: '8px',
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
                   color: '#64748B', cursor: 'pointer', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center',
+                  alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}
               >
                 <i className="bi bi-x-lg" style={{ fontSize: '0.75rem' }}></i>
               </button>
             </div>
 
-            {/* Highlighted user result banner */}
-            {!loadingResults && resultsPlayersList.find(r => r.uid === currentUser?.uid) && (() => {
-              const myEntry = resultsPlayersList.find(r => r.uid === currentUser?.uid);
-              return (
-                <div style={{
-                  margin: '10px 14px 0',
-                  padding: '10px 13px',
-                  borderRadius: '8px',
-                  background: 'linear-gradient(135deg, rgba(250,204,21,0.07), rgba(250,204,21,0.02))',
-                  border: '1px solid rgba(250,204,21,0.18)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  flexShrink: 0,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <i className="bi bi-person-fill" style={{ color: '#FACC15', fontSize: '0.8rem' }}></i>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#CBD5E1' }}>Your Result</span>
+            {/* Scrollable form */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '18px 20px 8px' }}>
+              <form id="report-form" onSubmit={handleReportSubmit}>
+
+                {/* Alert */}
+                {reportMsg && (
+                  <div style={{
+                    padding: '10px 14px', borderRadius: '8px', marginBottom: '16px',
+                    fontSize: '0.8rem', fontWeight: 600,
+                    background: reportMsg.type === 'success' ? 'rgba(74,222,128,0.1)' : 'rgba(239,68,68,0.1)',
+                    border: `1px solid ${reportMsg.type === 'success' ? 'rgba(74,222,128,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                    color: reportMsg.type === 'success' ? '#4ADE80' : '#F87171',
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                  }}>
+                    <i className={`bi ${reportMsg.type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'}`}></i>
+                    {reportMsg.text}
                   </div>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>Rank <strong style={{ color: '#FACC15' }}>#{myEntry.rank}</strong></span>
-                    <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>Kills <strong style={{ color: '#F87171' }}>{myEntry.kills}</strong></span>
-                    <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>Won <strong style={{ color: '#4ADE80' }}>₹{(myEntry.winnings || 0).toFixed(2)}</strong></span>
+                )}
+
+                {/* Select Player */}
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '10px' }}>
+                    Select Player to Report
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                    {selectedTourney.fullResults
+                      ?.filter(p => p.uid !== currentUser?.uid)
+                      .map(p => (
+                        <button
+                          key={p.uid}
+                          type="button"
+                          onClick={() => setAccusedPlayerUid(p.uid)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '10px 12px',
+                            borderRadius: '10px',
+                            border: accusedPlayerUid === p.uid
+                              ? '1px solid rgba(239,68,68,0.5)'
+                              : '1px solid rgba(255,255,255,0.07)',
+                            background: accusedPlayerUid === p.uid
+                              ? 'rgba(239,68,68,0.1)'
+                              : 'rgba(255,255,255,0.03)',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          <img
+                            src={p.photoURL || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(p.displayName)}`}
+                            alt=""
+                            style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '0px', flexShrink: 0 }}
+                          />
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 600, color: accusedPlayerUid === p.uid ? '#F87171' : '#CBD5E1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {p.displayName}
+                            </div>
+                            <div style={{ fontSize: '0.65rem', color: '#475569' }}>IGN: {p.inGameUsername} Â· Rank #{p.rank}</div>
+                          </div>
+                          {accusedPlayerUid === p.uid && (
+                            <i className="bi bi-check-circle-fill ms-auto" style={{ color: '#F87171', fontSize: '0.85rem', flexShrink: 0 }}></i>
+                          )}
+                        </button>
+                      ))
+                    }
                   </div>
                 </div>
-              );
-            })()}
 
-            {/* Roster list */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px 24px' }}>
-              {loadingResults ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <div key={i} style={{
-                      height: '58px', borderRadius: '8px',
-                      background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.055) 50%, rgba(255,255,255,0.03) 75%)',
-                      backgroundSize: '200% 100%',
-                      animation: `shimmer 1.4s ease-in-out ${i * 0.1}s infinite`,
-                    }} />
-                  ))}
-                </div>
-              ) : resultsPlayersList.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '4px' }}>
-                  {resultsPlayersList.map((player, idx) => {
-                    const isWinner = player.rank === 1;
-                    const isRunnerUp = player.rank === 2;
-                    const isThird = player.rank === 3;
-                    
-                    const rsColor = isWinner ? '#FACC15' : isRunnerUp ? '#94A3B8' : isThird ? '#C07434' : '#475569';
-                    const rsBg = isWinner ? 'rgba(250,204,21,0.1)' : isRunnerUp ? 'rgba(148,163,184,0.08)' : isThird ? 'rgba(192,116,52,0.08)' : 'transparent';
-                    const rsBorder = isWinner ? 'rgba(250,204,21,0.25)' : isRunnerUp ? 'rgba(148,163,184,0.2)' : isThird ? 'rgba(192,116,52,0.2)' : 'rgba(255,255,255,0.05)';
-                    const rsIcon = isWinner ? 'bi-trophy-fill' : (isRunnerUp || isThird) ? 'bi-award-fill' : '';
-
-                    const isMe = player.uid === currentUser?.uid;
-                    const avatarUrl = player.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(player.displayName)}&background=1E293B&color=E2E8F0&bold=true&size=36`;
-
-                    return (
-                      <div
-                        key={player.uid + idx}
+                {/* Reason Pills */}
+                <div style={{ marginBottom: '18px' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '10px' }}>
+                    Reason
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {['Hacker / Panel User', 'Glitch User', 'Violence / Abusing'].map(r => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setReportType(r)}
                         style={{
-                          display: 'flex', alignItems: 'center', gap: '10px',
-                          padding: '9px 12px',
-                          borderRadius: '8px',
-                          background: isMe ? 'rgba(250,204,21,0.05)' : rsBg,
-                          border: `1px solid ${isMe ? 'rgba(250,204,21,0.2)' : rsBorder}`,
+                          padding: '7px 14px',
+                          borderRadius: '20px',
+                          border: reportType === r ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                          background: reportType === r ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.04)',
+                          color: reportType === r ? '#F87171' : '#94A3B8',
+                          fontSize: '0.75rem', fontWeight: 600,
+                          cursor: 'pointer', transition: 'all 0.15s',
                         }}
                       >
-                        {/* Rank tag */}
-                        <div style={{ width: '32px', textAlign: 'center', flexShrink: 0 }}>
-                          {player.rank <= 3 ? (
-                            <i className={`bi ${rsIcon}`} style={{ color: rsColor, fontSize: '1rem' }}></i>
-                          ) : (
-                            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#334155' }}>#{player.rank}</span>
-                          )}
-                        </div>
-
-                        {/* Avatar */}
-                        <div style={{ position: 'relative', flexShrink: 0 }}>
-                          <img
-                            src={avatarUrl}
-                            alt={player.displayName}
-                            style={{ width: '34px', height: '34px', borderRadius: '6px', objectFit: 'cover' }}
-                          />
-                          {player.appliedBadgeUrl && (
-                            <span className="badge-sweep-wrap" style={{ bottom: '-3px', right: '-3px' }}>
-                              <img src={player.appliedBadgeUrl} alt="Badge" style={{ width: '14px', height: '14px' }} />
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Name + IGN */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{
-                            fontSize: '0.8rem', fontWeight: isMe ? 700 : 500,
-                            color: isMe ? '#E2E8F0' : '#94A3B8',
-                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                          }}>
-                            {player.displayName}
-                            {isMe && <span style={{ marginLeft: '6px', fontSize: '0.6rem', background: 'rgba(250,204,21,0.15)', color: '#FACC15', padding: '1px 5px', borderRadius: '3px', fontWeight: 600, letterSpacing: '0.04em' }}>YOU</span>}
-                          </div>
-                          {player.inGameUsername && (
-                            <div style={{ fontSize: '0.62rem', color: '#334155', marginTop: '1px' }}>{player.inGameUsername}</div>
-                          )}
-                        </div>
-
-                        {/* Kills */}
-                        <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '40px' }}>
-                          <div style={{ fontSize: '0.62rem', color: '#334155', marginBottom: '1px' }}>Kills</div>
-                          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: player.kills > 0 ? '#F87171' : '#334155' }}>{player.kills ?? 0}</div>
-                        </div>
-
-                        {/* Winnings */}
-                        <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '54px' }}>
-                          <div style={{ fontSize: '0.62rem', color: '#334155', marginBottom: '1px' }}>Earned</div>
-                          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: (player.winnings || 0) > 0 ? '#4ADE80' : '#334155' }}>
-                            {(player.winnings || 0) > 0 ? `₹${player.winnings.toFixed(0)}` : '—'}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '56px 20px' }}>
-                  <i className="bi bi-bar-chart-line" style={{ fontSize: '2.2rem', color: 'rgba(255,255,255,0.08)', display: 'block', marginBottom: '12px' }}></i>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>No results records.</div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer buttons */}
-            <div style={{ display: 'flex', gap: '8px', padding: '14px 18px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
-              <button
-                className="btn-custom btn-custom-secondary flex-grow-1"
-                onClick={() => setShowResultsModal(false)}
-                style={{ borderRadius: '6px', fontSize: '0.8rem', padding: '10px' }}
-              >
-                Close
-              </button>
-              {currentUser && selectedTourney.fullResults && selectedTourney.fullResults.some(p => p.uid === currentUser.uid) && (
-                <button
-                  className="btn-custom btn-custom-danger flex-grow-1"
-                  onClick={handleOpenReport}
-                  style={{ borderRadius: '6px', fontSize: '0.8rem', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                >
-                  <i className="bi bi-flag-fill"></i> Report Player
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Cheating Report Modal Overlay */}
-      {showReportModal && selectedTourney && (
-        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style={{ zIndex: 1050, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="custom-card p-4 mx-3" style={{ width: '100%', maxWidth: '450px' }}>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h5 className="modal-title m-0">Report Cheating / Abuse</h5>
-              <button className="btn-close btn-close-white" onClick={() => setShowReportModal(false)}></button>
-            </div>
-
-            <form onSubmit={handleReportSubmit}>
-              {reportMsg && (
-                <div className={`alert alert-${reportMsg.type} py-2 small`} role="alert">
-                  {reportMsg.text}
-                </div>
-              )}
-
-              <div className="form-group">
-                <label className="form-label">Select Accused Player</label>
-                <select 
-                  className="form-select"
-                  value={accusedPlayerUid}
-                  onChange={(e) => setAccusedPlayerUid(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>-- Select player to report --</option>
-                  {selectedTourney.fullResults
-                    ?.filter(p => p.uid !== currentUser?.uid)
-                    .map(p => (
-                      <option key={p.uid} value={p.uid}>
-                        {p.displayName} (IGN: {p.inGameUsername})
-                      </option>
+                        {r}
+                      </button>
                     ))}
-                </select>
-              </div>
+                  </div>
+                </div>
 
-              <div className="form-group">
-                <label className="form-label">Reason</label>
-                <select 
-                  className="form-select"
-                  value={reportType}
-                  onChange={(e) => setReportType(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>-- Select a reason --</option>
-                  <option value="Hacker / Panel User">Hacker / Panel User</option>
-                  <option value="Glitch User">Glitch User</option>
-                  <option value="Violence / Abusing">Violence / Abusing</option>
-                </select>
-              </div>
+                {/* Description */}
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    Details / Evidence Description
+                  </div>
+                  <textarea
+                    value={reportDesc}
+                    onChange={(e) => setReportDesc(e.target.value)}
+                    placeholder="Describe what happened â€” include timestamps, room ID, round number..."
+                    required
+                    rows={3}
+                    style={{
+                      width: '100%', resize: 'none',
+                      padding: '10px 13px',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.04)',
+                      color: '#E2E8F0', fontSize: '0.82rem',
+                      outline: 'none', boxSizing: 'border-box',
+                      lineHeight: '1.5',
+                    }}
+                  />
+                </div>
 
-              <div className="form-group">
-                <label className="form-label">Description / Evidence Details</label>
-                <textarea 
-                  className="form-control"
-                  value={reportDesc}
-                  onChange={(e) => setReportDesc(e.target.value)}
-                  placeholder="Provide timestamps or specific details..."
-                  style={{ minHeight: '80px' }}
-                  required
-                />
-              </div>
+                {/* Evidence Screenshot */}
+                <div style={{ marginBottom: '8px' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '8px' }}>
+                    Evidence Screenshot <span style={{ textTransform: 'none', color: '#334155', fontSize: '0.7rem', fontWeight: 400 }}>(Optional)</span>
+                  </div>
+                  <label style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '10px 14px', borderRadius: '10px',
+                    border: '1px dashed rgba(255,255,255,0.12)',
+                    background: 'rgba(255,255,255,0.02)',
+                    cursor: 'pointer',
+                  }}>
+                    <i className="bi bi-image" style={{ color: '#475569', fontSize: '1.1rem', flexShrink: 0 }}></i>
+                    <span style={{ fontSize: '0.78rem', color: '#475569' }}>
+                      {evidenceFile ? evidenceFile.name : 'Tap to upload screenshot...'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => setEvidenceFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                </div>
 
-              <div className="form-group mb-4">
-                <label className="form-label">Upload Evidence Screenshot (Optional)</label>
-                <input 
-                  type="file" 
-                  className="form-control" 
-                  accept="image/*"
-                  onChange={(e) => setEvidenceFile(e.target.files?.[0] || null)}
-                />
-              </div>
+              </form>
+            </div>
 
-              <div className="d-flex gap-2">
-                <button 
-                  type="button" 
-                  className="btn-custom btn-custom-secondary flex-grow-1" 
-                  onClick={() => { setShowReportModal(false); setShowResultsModal(true); }}
-                >
-                  Back
-                </button>
-                <button 
-                  type="submit" 
-                  className="btn-custom btn-custom-danger flex-grow-1"
-                  disabled={reportLoading}
-                >
-                  {reportLoading ? 'Submitting...' : 'Submit Report'}
-                </button>
-              </div>
-            </form>
+            {/* Footer Buttons */}
+            <div style={{
+              display: 'flex', gap: '10px',
+              padding: '14px 20px 24px',
+              borderTop: '1px solid rgba(255,255,255,0.05)',
+              flexShrink: 0, background: 'rgba(0,0,0,0.15)',
+            }}>
+              <button
+                type="button"
+                onClick={() => { setShowReportModal(false); setShowResultsModal(true); }}
+                style={{
+                  flex: 1, padding: '12px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.05)',
+                  color: '#94A3B8', fontWeight: 600, fontSize: '0.85rem',
+                  cursor: 'pointer',
+                }}
+              >
+                â† Back
+              </button>
+              <button
+                type="submit"
+                form="report-form"
+                disabled={reportLoading || !accusedPlayerUid || !reportType || !reportDesc.trim()}
+                style={{
+                  flex: 2, padding: '12px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: reportLoading || !accusedPlayerUid || !reportType || !reportDesc.trim()
+                    ? 'rgba(239,68,68,0.25)'
+                    : 'linear-gradient(135deg, #EF4444, #B91C1C)',
+                  color: '#FFFFFF', fontWeight: 700, fontSize: '0.85rem',
+                  cursor: reportLoading ? 'wait' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  transition: 'opacity 0.2s',
+                }}
+              >
+                {reportLoading ? (
+                  <><div style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#FFF', animation: 'spin 0.7s linear infinite' }} />Submitting...</>
+                ) : (
+                  <><i className="bi bi-flag-fill" style={{ fontSize: '0.75rem' }}></i>Submit Report</>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes mhSlideUp {
+          from { transform: translateY(40px); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </section>
   );
 };
 
 export default Tournaments;
+
