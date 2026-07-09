@@ -1201,7 +1201,9 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                     {player.username}
                                   </span>
                                   {player.appliedBadgeUrl && (
-                                    <img src={player.appliedBadgeUrl} alt="Badge" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} />
+                                    <span className="badge-sweep-wrap" style={{ position: 'relative', width: '18px', height: '18px', flexShrink: 0 }}>
+                                      <img src={player.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                                    </span>
                                   )}
                                 </div>
                                 <div style={{ fontSize: '0.66rem', color: '#94A3B8', marginTop: '1px' }}>
@@ -1285,7 +1287,9 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                         {team.username}
                                       </span>
                                       {team.appliedBadgeUrl && (
-                                        <img src={team.appliedBadgeUrl} alt="Badge" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} />
+                                        <span className="badge-sweep-wrap" style={{ position: 'relative', width: '18px', height: '18px', flexShrink: 0 }}>
+                                          <img src={team.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                                        </span>
                                       )}
                                     </div>
                                     <div style={{ fontSize: '0.68rem', color: '#94A3B8', marginTop: '1px' }}>
@@ -1396,7 +1400,9 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                       {team.username}
                                     </span>
                                     {team.appliedBadgeUrl && (
-                                      <img src={team.appliedBadgeUrl} alt="Badge" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} />
+                                      <span className="badge-sweep-wrap" style={{ position: 'relative', width: '18px', height: '18px', flexShrink: 0 }}>
+                                        <img src={team.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                                      </span>
                                     )}
                                   </div>
                                   <div style={{ fontSize: '0.68rem', color: '#94A3B8', marginTop: '1px' }}>
