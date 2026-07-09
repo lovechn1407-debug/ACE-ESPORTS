@@ -35,14 +35,14 @@ const Header: React.FC<HeaderProps> = ({
           />
         )}
         
-        {title && title !== settings?.appName ? (
+        {showBack ? (
           <div className="header-game-title">{title}</div>
         ) : (
           <div className="header-title" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#F3F4F6', display: 'block', lineHeight: '1.2' }}>
+            <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#F3F4F6', display: 'block', lineHeight: '1.2' }}>
               {settings?.appName || 'ACE ESPORTS'}
             </span>
-            <span style={{ fontSize: '0.68rem', color: '#9CA3AF', display: 'block', lineHeight: '1.2', marginTop: '1px' }}>
+            <span style={{ fontSize: '0.72rem', color: '#9CA3AF', display: 'block', lineHeight: '1.2', marginTop: '2px' }}>
               {userProfile?.displayName || 'Guest'}
             </span>
           </div>
@@ -71,14 +71,14 @@ const Header: React.FC<HeaderProps> = ({
                 borderRadius: '6px',
                 border: 'none',
                 fontWeight: '700',
-                padding: '4px 10px',
+                padding: '5px 12px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px'
+                gap: '6px'
               }}
             >
-              <i className="bi bi-wallet-fill" style={{ color: '#000000', fontSize: '0.92rem' }}></i>
-              <span style={{ color: '#000000', fontSize: '0.88rem', fontWeight: 'bold' }}>₹{userProfile.balance != null ? userProfile.balance.toFixed(2) : '0.00'}</span>
+              <i className="bi bi-wallet-fill" style={{ color: '#000000', fontSize: '0.98rem' }}></i>
+              <span style={{ color: '#000000', fontSize: '0.96rem', fontWeight: 'bold' }}>₹{userProfile.balance != null ? userProfile.balance.toFixed(2) : '0.00'}</span>
             </button>
           </>
         )}

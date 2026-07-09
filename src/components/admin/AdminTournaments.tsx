@@ -14,7 +14,7 @@ interface Tournament {
   gameId: string;
   startTime: number;
   status: 'upcoming' | 'ongoing' | 'completed' | 'result' | 'cancelled';
-  mode: 'Solo' | 'Duo';
+  mode: 'Solo' | 'Duo' | 'Squad';
   entryFee: number;
   prizePool: number;
   perKillPrize: number;
@@ -74,7 +74,7 @@ const AdminTournaments: React.FC = () => {
   const [gameId, setGameId] = useState('');
   const [startTimeStr, setStartTimeStr] = useState('');
   const [status, setStatus] = useState<'upcoming' | 'ongoing' | 'completed' | 'result' | 'cancelled'>('upcoming');
-  const [mode, setMode] = useState<'Solo' | 'Duo'>('Solo');
+  const [mode, setMode] = useState<'Solo' | 'Duo' | 'Squad'>('Solo');
   const [entryFee, setEntryFee] = useState(0);
   const [prizePool, setPrizePool] = useState(0);
   const [perKillPrize, setPerKillPrize] = useState(0);
@@ -162,27 +162,34 @@ const AdminTournaments: React.FC = () => {
         const promises = uids.map(uid => get(ref(db, `users/${uid}`)));
         const snaps = await Promise.all(promises);
 
-        const list = snaps.map((s, idx) => {
+        const list: any[] = [];
+        snaps.forEach((s, idx) => {
           const uid = uids[idx];
-          if (s.exists()) {
-            return {
-              uid,
-              displayName: s.val().displayName || 'Player',
-              email: s.val().email || '',
-              photoURL: s.val().photoURL,
-              balance: s.val().balance || 0,
-              username: playersData[uid].username,
-              gameUid: playersData[uid].gameUid,
-              entryFeePaid: playersData[uid].entryFeeDeducted !== undefined ? Number(playersData[uid].entryFeeDeducted) : Number(t.entryFee)
-            };
-          }
-          return {
+          const reg = playersData[uid];
+          const teammates: { username: string; gameUid: string }[] = [];
+
+          if (reg.teammateUsername) teammates.push({ username: reg.teammateUsername, gameUid: reg.teammateGameUid || 'N/A' });
+          if (reg.teammate2Username) teammates.push({ username: reg.teammate2Username, gameUid: reg.teammate2GameUid || 'N/A' });
+          if (reg.teammate3Username) teammates.push({ username: reg.teammate3Username, gameUid: reg.teammate3GameUid || 'N/A' });
+
+          list.push(s.exists() ? {
+            uid,
+            displayName: s.val().displayName || 'Player',
+            email: s.val().email || '',
+            photoURL: s.val().photoURL,
+            balance: s.val().balance || 0,
+            username: reg.username,
+            gameUid: reg.gameUid,
+            entryFeePaid: reg.entryFeeDeducted !== undefined ? Number(reg.entryFeeDeducted) : Number(t.entryFee),
+            teammates
+          } : {
             uid,
             displayName: 'Unknown Player',
-            username: playersData[uid].username,
-            gameUid: playersData[uid].gameUid,
-            entryFeePaid: Number(t.entryFee)
-          };
+            username: reg.username,
+            gameUid: reg.gameUid,
+            entryFeePaid: Number(t.entryFee),
+            teammates
+          });
         });
         setRegisteredPlayersList(list);
       }
@@ -535,7 +542,13 @@ const AdminTournaments: React.FC = () => {
                   else if (t.status === 'result') statusColor = 'primary';
                   else if (t.status === 'cancelled') statusColor = 'danger';
 
-                  const regCount = t.registeredPlayers ? Object.keys(t.registeredPlayers).length : 0;
+                  const regCount = t.registeredPlayers 
+                    ? Object.values(t.registeredPlayers).reduce((acc: number, p: any) => {
+                        if (t.mode === 'Duo' && p.teammateUsername) return acc + 2;
+                        if (t.mode === 'Squad') return acc + 1 + (p.teammateUsername ? 1 : 0) + (p.teammate2Username ? 1 : 0) + (p.teammate3Username ? 1 : 0);
+                        return acc + 1;
+                      }, 0)
+                    : 0;
                   const spotsColor = regCount >= t.maxPlayers ? 'text-danger fw-bold' : 'text-secondary';
 
                   return (
@@ -652,6 +665,7 @@ const AdminTournaments: React.FC = () => {
                   <select className="form-select" value={mode} onChange={(e: any) => setMode(e.target.value)}>
                     <option value="Solo">Solo Mode</option>
                     <option value="Duo">Duo Mode</option>
+                    <option value="Squad">Squad Mode (4 Players)</option>
                   </select>
                 </div>
               </div>
@@ -1103,30 +1117,37 @@ const AdminTournaments: React.FC = () => {
                   </thead>
                   <tbody>
                     {registeredPlayersList.length > 0 ? (
-                      registeredPlayersList.map((player) => (
-                        <tr key={player.uid} className="border-bottom border-secondary border-opacity-10">
-                          <td className="py-2 ps-3">
-                            <div className="fw-bold text-white">{player.displayName}</div>
-                            <div className="text-secondary" style={{ fontSize: '0.72rem' }}>{player.email || 'No email'}</div>
-                          </td>
-                          <td className="py-2 font-monospace text-accent">{player.username}</td>
-                          <td className="py-2 font-monospace text-secondary">{player.gameUid}</td>
-                          <td className="py-2 text-success fw-bold">₹{player.entryFeePaid}</td>
-                          <td className="py-2 pe-3 text-end">
-                            <button 
-                              className="btn btn-sm btn-outline-danger py-1 px-2"
-                              onClick={() => {
-                                setRemovingPlayer(player);
-                                setRemoveReason('');
-                                setShowRemoveConfirm(true);
-                              }}
-                              style={{ fontSize: '0.72rem', fontWeight: 600 }}
-                            >
-                              <i className="bi bi-person-dash-fill"></i> Remove
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                      registeredPlayersList.map((player) => {
+                        const isTeammate = player.isTeammate;
+                        return (
+                          <tr key={player.uid} className="border-bottom border-secondary border-opacity-10" style={{ opacity: isTeammate ? 0.75 : 1 }}>
+                            <td className="py-2 ps-3" style={{ paddingLeft: isTeammate ? '32px' : '15px' }}>
+                              <div className={isTeammate ? 'text-secondary' : 'fw-bold text-white'}>
+                                {isTeammate ? `↳ Teammate of ${player.mainPlayerName}` : player.displayName}
+                              </div>
+                              {!isTeammate && <div className="text-secondary" style={{ fontSize: '0.72rem' }}>{player.email || 'No email'}</div>}
+                            </td>
+                            <td className={`py-2 font-monospace ${isTeammate ? 'text-white-50' : 'text-accent'}`}>{player.username}</td>
+                            <td className="py-2 font-monospace text-secondary">{player.gameUid}</td>
+                            <td className="py-2 text-success fw-bold">{isTeammate ? '-' : `₹${player.entryFeePaid}`}</td>
+                            <td className="py-2 pe-3 text-end">
+                              {!isTeammate && (
+                                <button 
+                                  className="btn btn-sm btn-outline-danger py-1 px-2"
+                                  onClick={() => {
+                                    setRemovingPlayer(player);
+                                    setRemoveReason('');
+                                    setShowRemoveConfirm(true);
+                                  }}
+                                  style={{ fontSize: '0.72rem', fontWeight: 600 }}
+                                >
+                                  <i className="bi bi-person-dash-fill"></i> Remove
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
                         <td colSpan={5} className="text-center text-secondary py-5">
