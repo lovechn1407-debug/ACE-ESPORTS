@@ -1222,10 +1222,11 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                         width: '18px',
                                         height: '18px',
                                         flexShrink: 0,
+                                        alignSelf: 'center',
                                         ['--badge-color' as any]: hexToRgbStr(player.appliedBadgeColor || '#FFFFFF'),
                                       }}
                                     >
-                                      <img src={player.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                                      <img src={player.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px', objectFit: 'contain', display: 'block' }} />
                                     </span>
                                   )}
                                 </div>
@@ -1318,10 +1319,11 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                             width: '18px',
                                             height: '18px',
                                             flexShrink: 0,
+                                            alignSelf: 'center',
                                             ['--badge-color' as any]: hexToRgbStr(team.appliedBadgeColor || '#FFFFFF'),
                                           }}
                                         >
-                                          <img src={team.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                                          <img src={team.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px', objectFit: 'contain', display: 'block' }} />
                                         </span>
                                       )}
                                     </div>
@@ -1441,10 +1443,11 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                           width: '18px',
                                           height: '18px',
                                           flexShrink: 0,
+                                          alignSelf: 'center',
                                           ['--badge-color' as any]: hexToRgbStr(team.appliedBadgeColor || '#FFFFFF'),
                                         }}
                                       >
-                                        <img src={team.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                                        <img src={team.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px', objectFit: 'contain', display: 'block' }} />
                                       </span>
                                     )}
                                   </div>
