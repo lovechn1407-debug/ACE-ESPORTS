@@ -38,8 +38,13 @@ const Header: React.FC<HeaderProps> = ({
         {title ? (
           <div className="header-game-title">{title}</div>
         ) : (
-          <div className="header-title">
-            Welcome <span>{userProfile?.displayName || 'Guest'}</span>
+          <div className="header-title" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#F3F4F6', display: 'block', lineHeight: '1.2' }}>
+              {settings?.appName || 'ACE ESPORTS'}
+            </span>
+            <span style={{ fontSize: '0.68rem', color: '#9CA3AF', display: 'block', lineHeight: '1.2', marginTop: '1px' }}>
+              {userProfile?.displayName || 'Guest'}
+            </span>
           </div>
         )}
       </div>
@@ -58,20 +63,22 @@ const Header: React.FC<HeaderProps> = ({
             </button>
 
             <button 
-              className="header-spin-btn" 
-              onClick={() => onNavigateSection && onNavigateSection('earningZone-section')}
-              aria-label="Lucky Draw"
-              title="Lucky Draw / Spin"
-            >
-              <i className="bi bi-compass-fill"></i>
-            </button>
-
-            <button 
               className="wallet-chip" 
               onClick={() => onNavigateSection && onNavigateSection('wallet-section')}
+              style={{
+                background: '#FACC15',
+                color: '#000000',
+                borderRadius: '6px',
+                border: 'none',
+                fontWeight: '700',
+                padding: '4px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
             >
-              <i className="bi bi-wallet-fill"></i>
-              <span>₹{userProfile.balance != null ? userProfile.balance.toFixed(2) : '0.00'}</span>
+              <i className="bi bi-wallet-fill" style={{ color: '#000000', fontSize: '0.85rem' }}></i>
+              <span style={{ color: '#000000', fontSize: '0.78rem', fontWeight: 'bold' }}>₹{userProfile.balance != null ? userProfile.balance.toFixed(2) : '0.00'}</span>
             </button>
           </>
         )}
