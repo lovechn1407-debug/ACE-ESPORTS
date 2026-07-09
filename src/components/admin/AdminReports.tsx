@@ -2,12 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { ref, get, update, push, serverTimestamp } from 'firebase/database';
 import { db } from '../../firebase';
 
+const hexToRgbStr = (hex: string): string => {
+  const clean = (hex || '#FFFFFF').replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16) || 255;
+  const g = parseInt(clean.substring(2, 4), 16) || 255;
+  const b = parseInt(clean.substring(4, 6), 16) || 255;
+  return `${r}, ${g}, ${b}`;
+};
+
 interface ReportDetail {
   reporterName: string;
   reporterUid: string;
   reportType: string;
   description: string;
   imageUrl?: string;
+  accusedTeammateUsername?: string;
+  accusedTeammateGameUid?: string;
 }
 
 interface AccusedPlayer {
@@ -16,6 +26,11 @@ interface AccusedPlayer {
   status: 'pending' | 'resolved';
   replySent?: boolean;
   reports: ReportDetail[];
+  photoURL?: string;
+  username?: string;
+  appliedBadgeUrl?: string;
+  appliedBadgeEffect?: string;
+  appliedBadgeColor?: string;
 }
 
 interface TournamentReportGroup {
@@ -56,14 +71,31 @@ const AdminReports: React.FC = () => {
       const rawReports = snap.val();
       const tournamentIds = Object.keys(rawReports);
 
-      // Fetch tournament names
+      // Fetch tournament names and collect unique accused UIDs
       const namesMap: Record<string, string> = {};
+      const allAccusedUids = new Set<string>();
+
       const tPromises = tournamentIds.map(id => get(ref(db, `tournaments/${id}`)));
       const tSnaps = await Promise.all(tPromises);
       tSnaps.forEach(s => {
         if (s.exists()) {
           namesMap[s.key!] = s.val().name || 'Unknown Match';
         }
+      });
+
+      for (const tournamentId of tournamentIds) {
+        const accusedMap = rawReports[tournamentId];
+        for (const accusedUid in accusedMap) {
+          allAccusedUids.add(accusedUid);
+        }
+      }
+
+      // Fetch accused profiles
+      const userPromises = Array.from(allAccusedUids).map(uid => get(ref(db, `users/${uid}`)));
+      const userSnaps = await Promise.all(userPromises);
+      const userMap: Record<string, any> = {};
+      userSnaps.forEach(s => {
+        if (s.exists()) userMap[s.key!] = s.val();
       });
 
       const groups: TournamentReportGroup[] = [];
@@ -83,12 +115,19 @@ const AdminReports: React.FC = () => {
             groupResolved = false;
           }
 
+          const uData = userMap[accusedUid] || {};
+
           accusedList.push({
             uid: accusedUid,
             accusedPlayerName: val.accusedPlayerName || 'Player',
             status: val.status || 'pending',
             replySent: val.replySent || false,
-            reports
+            reports,
+            photoURL: uData.photoURL,
+            username: uData.username || 'N/A',
+            appliedBadgeUrl: uData.appliedBadgeUrl || '',
+            appliedBadgeEffect: uData.appliedBadgeEffect || '',
+            appliedBadgeColor: uData.appliedBadgeColor || '',
           });
         }
 
@@ -289,14 +328,71 @@ const AdminReports: React.FC = () => {
             const isResolved = accused.status === 'resolved';
             return (
               <div key={accused.uid} className="card custom-card p-4 mb-4">
-                <div className="d-flex justify-content-between align-items-start border-bottom border-secondary border-opacity-25 pb-3 mb-3">
-                  <div>
-                    <h5 className="text-white m-0">Accused: {accused.accusedPlayerName}</h5>
-                    <small className="text-secondary font-monospace">UID: {accused.uid}</small>
+                <div 
+                  style={{
+                    background: "url('/images/list_item_bg.webp') no-repeat center center",
+                    backgroundSize: 'cover',
+                    padding: '12px 18px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(124, 58, 237, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '20px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                    <div style={{ width: '42px', height: '42px', flexShrink: 0 }}>
+                      <img 
+                        src={accused.photoURL || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(accused.username || accused.accusedPlayerName)}`} 
+                        alt="avatar" 
+                        style={{ width: '42px', height: '42px', objectFit: 'cover', border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: '0px' }}
+                      />
+                    </div>
+
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#FACC15', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                          {accused.username || accused.accusedPlayerName}
+                        </span>
+                        {accused.appliedBadgeUrl && (
+                          <span
+                            className="badge-sweep-wrap"
+                            data-effect={accused.appliedBadgeEffect || 'light-sweep'}
+                            style={{
+                              position: 'relative',
+                              bottom: '0',
+                              right: '0',
+                              width: '18px',
+                              height: '18px',
+                              flexShrink: 0,
+                              alignSelf: 'center',
+                              ['--badge-color' as any]: hexToRgbStr(accused.appliedBadgeColor || '#FFFFFF'),
+                            }}
+                          >
+                            <img src={accused.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px', objectFit: 'contain', display: 'block' }} />
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '1px' }}>
+                        UID: {accused.uid}
+                      </div>
+                    </div>
                   </div>
-                  <span className={`badge text-bg-${isResolved ? 'success' : 'warning'} text-uppercase`}>
-                    {accused.status}
-                  </span>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'end', gap: '6px' }}>
+                    <span style={{
+                      fontSize: '0.74rem', color: '#94A3B8', fontWeight: 600,
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      padding: '2px 8px', borderRadius: '4px'
+                    }}>
+                      {accused.accusedPlayerName}
+                    </span>
+                    <span className={`badge text-bg-${isResolved ? 'success' : 'warning'} text-uppercase`} style={{ fontSize: '0.62rem', fontWeight: 700, padding: '3px 6px' }}>
+                      {accused.status}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Reports details list */}
@@ -309,6 +405,13 @@ const AdminReports: React.FC = () => {
                           <strong className="text-warning">Filed by: {r.reporterName}</strong>
                           <span className="badge bg-secondary">{r.reportType}</span>
                         </div>
+                        {r.accusedTeammateUsername && (
+                          <div className="mb-2 p-2 rounded bg-danger bg-opacity-10 border border-danger border-opacity-25" style={{ fontSize: '0.8rem' }}>
+                            <span className="text-danger fw-bold"><i className="bi bi-flag-fill me-1"></i>Cheater Target:</span>{' '}
+                            <span className="text-white fw-bold">{r.accusedTeammateUsername}</span>{' '}
+                            <span className="text-secondary">(UID: {r.accusedTeammateGameUid})</span>
+                          </div>
+                        )}
                         <p className="mb-2 text-secondary">{r.description || 'No description provided.'}</p>
                         {r.imageUrl && (
                           <div>
