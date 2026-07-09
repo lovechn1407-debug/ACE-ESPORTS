@@ -1183,26 +1183,26 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                 #{idx + 1}
                               </span>
                               
-                              <div style={{ position: 'relative', width: '38px', height: '38px', flexShrink: 0 }}>
+                              <div style={{ width: '38px', height: '38px', flexShrink: 0 }}>
                                 <img 
                                   src={player.photoURL || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(player.username || player.displayName)}`} 
                                   alt="avatar" 
                                   className="w-100 h-100 object-fit-cover"
-                                  style={{ border: '1.5px solid rgba(255,255,255,0.06)', borderRadius: '50%' }}
+                                  style={{ border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: '4px' }}
                                   onError={(e) => {
                                     (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(player.uid)}`;
                                   }}
                                 />
-                                {player.appliedBadgeUrl && (
-                                  <span className="badge-sweep-wrap" style={{ position: 'absolute', bottom: '-5px', right: '-5px', width: '19px', height: '19px', borderRadius: '50%', overflow: 'hidden' }}>
-                                    <img src={player.appliedBadgeUrl} alt="Badge" className="w-100 h-100 object-fit-contain" />
-                                  </span>
-                                )}
                               </div>
 
                               <div>
-                                <div style={{ fontSize: '0.85rem', fontWeight: 650, color: '#FACC15' }}>
-                                  {player.username}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                  <span style={{ fontSize: '0.85rem', fontWeight: 650, color: '#FACC15' }}>
+                                    {player.username}
+                                  </span>
+                                  {player.appliedBadgeUrl && (
+                                    <img src={player.appliedBadgeUrl} alt="Badge" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} />
+                                  )}
                                 </div>
                                 <div style={{ fontSize: '0.66rem', color: '#94A3B8', marginTop: '1px' }}>
                                   UID: {player.gameUid}
@@ -1267,26 +1267,26 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                 }}
                               >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-                                  <div style={{ position: 'relative', width: '38px', height: '38px', flexShrink: 0 }}>
+                                  <div style={{ width: '38px', height: '38px', flexShrink: 0 }}>
                                     <img 
                                       src={team.photoURL || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.username || team.displayName)}`} 
                                       alt="avatar" 
                                       className="w-100 h-100 object-fit-cover"
-                                      style={{ border: '1.5px solid rgba(255,255,255,0.06)', borderRadius: '50%' }}
+                                      style={{ border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: '4px' }}
                                       onError={(e) => {
                                         (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.uid)}`;
                                       }}
                                     />
-                                    {team.appliedBadgeUrl && (
-                                      <span className="badge-sweep-wrap" style={{ position: 'absolute', bottom: '-4px', right: '-4px', width: '16px', height: '16px', borderRadius: '50%', overflow: 'hidden' }}>
-                                        <img src={team.appliedBadgeUrl} alt="Badge" className="w-100 h-100 object-fit-contain" />
-                                      </span>
-                                    )}
                                   </div>
 
                                   <div style={{ minWidth: 0 }}>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#FACC15', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                                      {team.username}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                      <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#FACC15', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                        {team.username}
+                                      </span>
+                                      {team.appliedBadgeUrl && (
+                                        <img src={team.appliedBadgeUrl} alt="Badge" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} />
+                                      )}
                                     </div>
                                     <div style={{ fontSize: '0.68rem', color: '#94A3B8', marginTop: '1px' }}>
                                       UID: {team.gameUid}
@@ -1378,26 +1378,26 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                   #{idx + 1}
                                 </span>
                                 
-                                <div style={{ position: 'relative', width: '38px', height: '38px', flexShrink: 0 }}>
+                                <div style={{ width: '38px', height: '38px', flexShrink: 0 }}>
                                   <img 
                                     src={team.photoURL || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.username || team.displayName)}`} 
                                     alt="avatar" 
                                     className="w-100 h-100 object-fit-cover"
-                                    style={{ border: '1.5px solid rgba(255,255,255,0.06)', borderRadius: '50%' }}
+                                    style={{ border: '0.5px solid rgba(255,255,255,0.15)', borderRadius: '4px' }}
                                     onError={(e) => {
                                       (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.uid)}`;
                                     }}
                                   />
-                                  {team.appliedBadgeUrl && (
-                                    <span className="badge-sweep-wrap" style={{ position: 'absolute', bottom: '-4px', right: '-4px', width: '16px', height: '16px', borderRadius: '50%', overflow: 'hidden' }}>
-                                      <img src={team.appliedBadgeUrl} alt="Badge" className="w-100 h-100 object-fit-contain" />
-                                    </span>
-                                  )}
                                 </div>
 
                                 <div style={{ minWidth: 0 }}>
-                                  <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#FACC15', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                                    {team.username}
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#FACC15', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                      {team.username}
+                                    </span>
+                                    {team.appliedBadgeUrl && (
+                                      <img src={team.appliedBadgeUrl} alt="Badge" style={{ width: '16px', height: '16px', objectFit: 'contain', flexShrink: 0 }} />
+                                    )}
                                   </div>
                                   <div style={{ fontSize: '0.68rem', color: '#94A3B8', marginTop: '1px' }}>
                                     UID: {team.gameUid}
