@@ -14,6 +14,15 @@ interface ProfileProps {
 
 const IMGBB_API_KEY = '17524c13e2cca244c03f6ad0db42e5e0';
 
+/** Convert "#RRGGBB" → "R, G, B" for CSS rgba() */
+const hexToRgbStr = (hex: string): string => {
+  const clean = (hex || '#FFFFFF').replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16) || 255;
+  const g = parseInt(clean.substring(2, 4), 16) || 255;
+  const b = parseInt(clean.substring(4, 6), 16) || 255;
+  return `${r}, ${g}, ${b}`;
+};
+
 const Profile: React.FC<ProfileProps> = ({ onOpenPolicy, onOpenMatchHistory, onLogout, onNavigateToView }) => {
   const { currentUser, userProfile } = useAuth();
   const { settings } = useSettings();
@@ -301,6 +310,7 @@ const Profile: React.FC<ProfileProps> = ({ onOpenPolicy, onOpenMatchHistory, onL
             {(userProfile as any)?.appliedBadgeUrl && (
               <span 
                 className="badge-sweep-wrap" 
+                data-effect={(userProfile as any).appliedBadgeEffect || 'light-sweep'}
                 style={{
                   position: 'absolute',
                   bottom: '-10px',
@@ -308,7 +318,8 @@ const Profile: React.FC<ProfileProps> = ({ onOpenPolicy, onOpenMatchHistory, onL
                   zIndex: 10,
                   width: '24px',
                   height: '24px',
-                  display: 'block'
+                  display: 'block',
+                  ['--badge-color' as any]: hexToRgbStr((userProfile as any).appliedBadgeColor || '#FFFFFF'),
                 }}
               >
                 <img
@@ -457,6 +468,7 @@ const Profile: React.FC<ProfileProps> = ({ onOpenPolicy, onOpenMatchHistory, onL
               {(userProfile as any)?.appliedBadgeUrl && (
                 <span 
                   className="badge-sweep-wrap" 
+                  data-effect={(userProfile as any).appliedBadgeEffect || 'light-sweep'}
                   style={{
                     position: 'absolute',
                     bottom: '-4px',
@@ -464,7 +476,8 @@ const Profile: React.FC<ProfileProps> = ({ onOpenPolicy, onOpenMatchHistory, onL
                     zIndex: 5,
                     width: '28px',
                     height: '28px',
-                    display: 'block'
+                    display: 'block',
+                    ['--badge-color' as any]: hexToRgbStr((userProfile as any).appliedBadgeColor || '#FFFFFF'),
                   }}
                 >
                   <img

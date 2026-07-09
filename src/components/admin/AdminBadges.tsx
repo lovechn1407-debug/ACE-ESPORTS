@@ -19,6 +19,8 @@ interface UserItem {
   email: string;
   gameUid?: string;
   appliedBadgeUrl?: string;
+  appliedBadgeEffect?: string;
+  appliedBadgeColor?: string;
   photoURL?: string;
 }
 
@@ -104,6 +106,8 @@ const AdminBadges: React.FC = () => {
             email:           val.email || 'N/A',
             gameUid:         val.gameUid || '',
             appliedBadgeUrl: val.appliedBadgeUrl || '',
+            appliedBadgeEffect: val.appliedBadgeEffect || '',
+            appliedBadgeColor:  val.appliedBadgeColor || '',
             photoURL:        val.photoURL || '',
           });
         });
@@ -172,10 +176,25 @@ const AdminBadges: React.FC = () => {
     if (!configuringBadgeId) return;
     setSavingStyle(true);
     try {
-      await update(ref(db, `uploads/badges/${configuringBadgeId}`), {
-        effect:      configEffect,
-        effectColor: configColor,
+      // Find the badge imageUrl so we can match users wearing it
+      const badge = badges.find(b => b.id === configuringBadgeId);
+      if (!badge) throw new Error('Badge not found');
+
+      const updates: any = {};
+
+      // 1. Update the badge record itself
+      updates[`uploads/badges/${configuringBadgeId}/effect`]      = configEffect;
+      updates[`uploads/badges/${configuringBadgeId}/effectColor`] = configColor;
+
+      // 2. Propagate to all users currently wearing this badge
+      users.forEach(u => {
+        if (u.appliedBadgeUrl === badge.imageUrl) {
+          updates[`users/${u.uid}/appliedBadgeEffect`] = configEffect;
+          updates[`users/${u.uid}/appliedBadgeColor`]  = configColor;
+        }
       });
+
+      await update(ref(db), updates);
       await fetchBadgesAndUsers();
       setConfiguringBadgeId(null);
     } catch (err: any) {

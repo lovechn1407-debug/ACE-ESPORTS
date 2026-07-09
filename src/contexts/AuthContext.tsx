@@ -35,6 +35,9 @@ export interface UserProfile {
   notificationsEnabled?: boolean;
   referralEarnings?: number;
   lastCheckedNotifications?: number;
+  appliedBadgeUrl?: string;
+  appliedBadgeEffect?: string;
+  appliedBadgeColor?: string;
 }
 
 

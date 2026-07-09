@@ -7,9 +7,20 @@ interface LeaderboardUser {
   displayName: string;
   photoURL?: string;
   appliedBadgeUrl?: string;
+  appliedBadgeEffect?: string;
+  appliedBadgeColor?: string;
   leaderboardRank: number;
   leaderboardDisplayEarnings: number;
 }
+
+/** Convert "#RRGGBB" → "R, G, B" for CSS rgba() */
+const hexToRgbStr = (hex: string): string => {
+  const clean = (hex || '#FFFFFF').replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16) || 255;
+  const g = parseInt(clean.substring(2, 4), 16) || 255;
+  const b = parseInt(clean.substring(4, 6), 16) || 255;
+  return `${r}, ${g}, ${b}`;
+};
 
 const Leaderboard: React.FC = () => {
   const [list, setList] = useState<LeaderboardUser[]>([]);
@@ -27,7 +38,9 @@ const Leaderboard: React.FC = () => {
                 uid,
                 displayName: val.displayName || 'Player',
                 photoURL: val.photoURL,
-                appliedBadgeUrl: val.appliedBadgeUrl || '',
+                appliedBadgeUrl:    val.appliedBadgeUrl || '',
+                appliedBadgeEffect: val.appliedBadgeEffect || 'light-sweep',
+                appliedBadgeColor:  val.appliedBadgeColor || '#FFFFFF',
                 leaderboardRank: val.leaderboardRank,
                 leaderboardDisplayEarnings: val.leaderboardDisplayEarnings || 0
               });
@@ -79,7 +92,18 @@ const Leaderboard: React.FC = () => {
                           className="podium-avatar"
                         />
                         {secondPlace.appliedBadgeUrl && (
-                          <span className="badge-sweep-wrap" style={{ position: 'absolute', bottom: '-4px', right: '-4px', width: '18px', height: '18px' }}>
+                          <span
+                            className="badge-sweep-wrap"
+                            data-effect={secondPlace.appliedBadgeEffect || 'light-sweep'}
+                            style={{
+                              position: 'absolute',
+                              bottom: '-4px',
+                              right: '-4px',
+                              width: '18px',
+                              height: '18px',
+                              ['--badge-color' as any]: hexToRgbStr(secondPlace.appliedBadgeColor || '#FFFFFF'),
+                            }}
+                          >
                             <img src={secondPlace.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px' }} />
                           </span>
                         )}
@@ -112,7 +136,18 @@ const Leaderboard: React.FC = () => {
                           className="podium-avatar"
                         />
                         {firstPlace.appliedBadgeUrl && (
-                          <span className="badge-sweep-wrap" style={{ position: 'absolute', bottom: '-4px', right: '-4px', width: '20px', height: '20px' }}>
+                          <span
+                            className="badge-sweep-wrap"
+                            data-effect={firstPlace.appliedBadgeEffect || 'light-sweep'}
+                            style={{
+                              position: 'absolute',
+                              bottom: '-4px',
+                              right: '-4px',
+                              width: '20px',
+                              height: '20px',
+                              ['--badge-color' as any]: hexToRgbStr(firstPlace.appliedBadgeColor || '#FFFFFF'),
+                            }}
+                          >
                             <img src={firstPlace.appliedBadgeUrl} alt="Badge" style={{ width: '20px', height: '20px' }} />
                           </span>
                         )}
@@ -145,7 +180,18 @@ const Leaderboard: React.FC = () => {
                           className="podium-avatar"
                         />
                         {thirdPlace.appliedBadgeUrl && (
-                          <span className="badge-sweep-wrap" style={{ position: 'absolute', bottom: '-4px', right: '-4px', width: '18px', height: '18px' }}>
+                          <span
+                            className="badge-sweep-wrap"
+                            data-effect={thirdPlace.appliedBadgeEffect || 'light-sweep'}
+                            style={{
+                              position: 'absolute',
+                              bottom: '-4px',
+                              right: '-4px',
+                              width: '18px',
+                              height: '18px',
+                              ['--badge-color' as any]: hexToRgbStr(thirdPlace.appliedBadgeColor || '#FFFFFF'),
+                            }}
+                          >
                             <img src={thirdPlace.appliedBadgeUrl} alt="Badge" style={{ width: '18px', height: '18px' }} />
                           </span>
                         )}
@@ -187,7 +233,21 @@ const Leaderboard: React.FC = () => {
                         style={{ borderRadius: '0px', border: '1.5px solid rgba(255,255,255,0.06)' }}
                       />
                       {user.appliedBadgeUrl && (
-                        <span className="badge-sweep-wrap" style={{ position: 'absolute', bottom: '-5px', right: '-5px', zIndex: 5, width: '19px', height: '19px', borderRadius: '50%', overflow: 'hidden' }}>
+                        <span
+                          className="badge-sweep-wrap"
+                          data-effect={user.appliedBadgeEffect || 'light-sweep'}
+                          style={{
+                            position: 'absolute',
+                            bottom: '-5px',
+                            right: '-5px',
+                            zIndex: 5,
+                            width: '19px',
+                            height: '19px',
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            ['--badge-color' as any]: hexToRgbStr(user.appliedBadgeColor || '#FFFFFF'),
+                          }}
+                        >
                           <img src={user.appliedBadgeUrl} alt="Badge" className="w-100 h-100 object-fit-contain" />
                         </span>
                       )}

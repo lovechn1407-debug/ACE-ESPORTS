@@ -16,10 +16,21 @@ interface ResultEntry {
   inGameUsername?: string;
   photoURL?: string;
   appliedBadgeUrl?: string;
+  appliedBadgeEffect?: string;
+  appliedBadgeColor?: string;
   rank: number;
   kills: number;
   winnings: number;
 }
+
+/** Convert "#RRGGBB" → "R, G, B" for CSS rgba() */
+const hexToRgbStr = (hex: string): string => {
+  const clean = (hex || '#FFFFFF').replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16) || 255;
+  const g = parseInt(clean.substring(2, 4), 16) || 255;
+  const b = parseInt(clean.substring(4, 6), 16) || 255;
+  return `${r}, ${g}, ${b}`;
+};
 
 const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tournamentName, onClose, onBack }) => {
   const { currentUser } = useAuth();
@@ -196,7 +207,17 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                         style={{ width: '34px', height: '34px', borderRadius: '0px', objectFit: 'cover' }}
                       />
                       {player.appliedBadgeUrl && (
-                        <span className="badge-sweep-wrap" style={{ bottom: '-3px', right: '-3px' }}>
+                        <span 
+                          className="badge-sweep-wrap" 
+                          data-effect={player.appliedBadgeEffect || 'light-sweep'}
+                          style={{
+                            bottom: '-3px',
+                            right: '-3px',
+                            width: '14px',
+                            height: '14px',
+                            ['--badge-color' as any]: hexToRgbStr(player.appliedBadgeColor || '#FFFFFF')
+                          }}
+                        >
                           <img src={player.appliedBadgeUrl} alt="Badge" style={{ width: '14px', height: '14px' }} />
                         </span>
                       )}

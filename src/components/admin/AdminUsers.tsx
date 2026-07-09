@@ -18,7 +18,18 @@ interface UserProfile {
   wonMatches?: number;
   photoURL?: string;
   appliedBadgeUrl?: string;
+  appliedBadgeEffect?: string;
+  appliedBadgeColor?: string;
 }
+
+/** Convert "#RRGGBB" → "R, G, B" for CSS rgba() */
+const hexToRgbStr = (hex: string): string => {
+  const clean = (hex || '#FFFFFF').replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16) || 255;
+  const g = parseInt(clean.substring(2, 4), 16) || 255;
+  const b = parseInt(clean.substring(4, 6), 16) || 255;
+  return `${r}, ${g}, ${b}`;
+};
 
 const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -239,7 +250,17 @@ const AdminUsers: React.FC = () => {
                             />
                             {/* Optional Active Badge */}
                             {u.appliedBadgeUrl && (
-                              <div className="position-absolute bottom-0 end-0 badge-sweep-wrap" style={{ width: '16px', height: '16px', borderRadius: '50%', overflow: 'hidden' }}>
+                              <div 
+                                className="position-absolute bottom-0 end-0 badge-sweep-wrap" 
+                                data-effect={u.appliedBadgeEffect || 'light-sweep'}
+                                style={{
+                                  width: '16px',
+                                  height: '16px',
+                                  borderRadius: '50%',
+                                  overflow: 'hidden',
+                                  ['--badge-color' as any]: hexToRgbStr(u.appliedBadgeColor || '#FFFFFF')
+                                }}
+                              >
                                 <img src={u.appliedBadgeUrl} alt="badge" className="w-100 h-100 object-fit-contain" />
                               </div>
                             )}

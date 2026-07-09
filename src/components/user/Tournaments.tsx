@@ -1219,6 +1219,8 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                       data-effect={player.appliedBadgeEffect || 'light-sweep'}
                                       style={{
                                         position: 'relative',
+                                        bottom: '0',
+                                        right: '0',
                                         width: '18px',
                                         height: '18px',
                                         flexShrink: 0,
@@ -1316,6 +1318,8 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                           data-effect={team.appliedBadgeEffect || 'light-sweep'}
                                           style={{
                                             position: 'relative',
+                                            bottom: '0',
+                                            right: '0',
                                             width: '18px',
                                             height: '18px',
                                             flexShrink: 0,
@@ -1440,6 +1444,8 @@ const Tournaments: React.FC<TournamentsProps> = ({
                                         data-effect={team.appliedBadgeEffect || 'light-sweep'}
                                         style={{
                                           position: 'relative',
+                                          bottom: '0',
+                                          right: '0',
                                           width: '18px',
                                           height: '18px',
                                           flexShrink: 0,

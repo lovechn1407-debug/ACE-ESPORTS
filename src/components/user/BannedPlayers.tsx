@@ -7,9 +7,20 @@ interface BannedPlayer {
   displayName: string;
   photoURL?: string;
   appliedBadgeUrl?: string;
+  appliedBadgeEffect?: string;
+  appliedBadgeColor?: string;
   blockReason?: string;
   gameUid?: string;
 }
+
+/** Convert "#RRGGBB" → "R, G, B" for CSS rgba() */
+const hexToRgbStr = (hex: string): string => {
+  const clean = (hex || '#FFFFFF').replace('#', '');
+  const r = parseInt(clean.substring(0, 2), 16) || 255;
+  const g = parseInt(clean.substring(2, 4), 16) || 255;
+  const b = parseInt(clean.substring(4, 6), 16) || 255;
+  return `${r}, ${g}, ${b}`;
+};
 
 interface BannedPlayersProps {
   onBack: () => void;
@@ -32,7 +43,9 @@ const BannedPlayers: React.FC<BannedPlayersProps> = ({ onBack }) => {
                 uid,
                 displayName: val.displayName || 'Unnamed Player',
                 photoURL: val.photoURL || '',
-                appliedBadgeUrl: val.appliedBadgeUrl || '',
+                appliedBadgeUrl:    val.appliedBadgeUrl || '',
+                appliedBadgeEffect: val.appliedBadgeEffect || 'light-sweep',
+                appliedBadgeColor:  val.appliedBadgeColor || '#FFFFFF',
                 blockReason: val.blockReason || 'Violation of fair play policies.',
                 gameUid: val.gameUid || ''
               });
@@ -107,7 +120,19 @@ const BannedPlayers: React.FC<BannedPlayersProps> = ({ onBack }) => {
                     style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '0px' }}
                   />
                   {p.appliedBadgeUrl && (
-                    <span className="badge-sweep-wrap" style={{ position: 'absolute', bottom: '-4px', right: '-4px', zIndex: 5 }}>
+                    <span 
+                      className="badge-sweep-wrap" 
+                      data-effect={p.appliedBadgeEffect || 'light-sweep'}
+                      style={{
+                        position: 'absolute',
+                        bottom: '-4px',
+                        right: '-4px',
+                        zIndex: 5,
+                        width: '20px',
+                        height: '20px',
+                        ['--badge-color' as any]: hexToRgbStr(p.appliedBadgeColor || '#FFFFFF')
+                      }}
+                    >
                       <img src={p.appliedBadgeUrl} alt="Badge" style={{ width: '20px', height: '20px' }} />
                     </span>
                   )}
