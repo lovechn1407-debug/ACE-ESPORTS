@@ -35,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({
           />
         )}
         
-        {title ? (
+        {title && title !== settings?.appName ? (
           <div className="header-game-title">{title}</div>
         ) : (
           <div className="header-title" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -77,8 +77,8 @@ const Header: React.FC<HeaderProps> = ({
                 gap: '5px'
               }}
             >
-              <i className="bi bi-wallet-fill" style={{ color: '#000000', fontSize: '0.85rem' }}></i>
-              <span style={{ color: '#000000', fontSize: '0.78rem', fontWeight: 'bold' }}>₹{userProfile.balance != null ? userProfile.balance.toFixed(2) : '0.00'}</span>
+              <i className="bi bi-wallet-fill" style={{ color: '#000000', fontSize: '0.92rem' }}></i>
+              <span style={{ color: '#000000', fontSize: '0.88rem', fontWeight: 'bold' }}>₹{userProfile.balance != null ? userProfile.balance.toFixed(2) : '0.00'}</span>
             </button>
           </>
         )}
