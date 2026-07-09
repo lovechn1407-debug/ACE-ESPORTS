@@ -19,7 +19,9 @@ interface ResultEntry {
   appliedBadgeEffect?: string;
   appliedBadgeColor?: string;
   rank: number;
-  kills: number;
+  kills: number; // total team kills
+  leaderKills?: number;
+  teammates?: { username: string; gameUid: string; kills: number }[];
   winnings: number;
 }
 
@@ -35,6 +37,7 @@ const hexToRgbStr = (hex: string): string => {
 const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tournamentName, onClose, onBack }) => {
   const { currentUser } = useAuth();
   const [results, setResults] = useState<ResultEntry[]>([]);
+  const [mode, setMode] = useState<'Solo' | 'Duo' | 'Squad'>('Solo');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -44,6 +47,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
         const snap = await get(ref(db, `tournaments/${tournamentId}`));
         if (snap.exists()) {
           const data = snap.val();
+          setMode(data.mode || 'Solo');
           const raw: ResultEntry[] = data.fullResults || [];
           // Sort by rank ascending
           raw.sort((a, b) => (a.rank || 999) - (b.rank || 999));
@@ -170,11 +174,148 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
               {error}
             </div>
           ) : results.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
               {results.map((player, idx) => {
                 const rs = getRankStyle(player.rank);
                 const isMe = player.uid === currentUser?.uid;
                 const avatarUrl = player.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(player.displayName)}&background=1E293B&color=E2E8F0&bold=true&size=36`;
+                const teammates = player.teammates || [];
+                const isTeamMode = mode === 'Duo' || mode === 'Squad';
+
+                if (isTeamMode && teammates.length > 0) {
+                  return (
+                    <div
+                      key={player.uid + idx}
+                      style={{
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(124, 58, 237, 0.15)',
+                        background: 'rgba(15, 21, 38, 0.5)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }}
+                    >
+                      {/* Leader Row */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '9px 12px',
+                          background: "url('/images/match_results_item_bg.webp') no-repeat center center",
+                          backgroundSize: 'cover',
+                          borderBottom: '1px solid rgba(124, 58, 237, 0.12)',
+                        }}
+                      >
+                        {/* Rank */}
+                        <div style={{ width: '32px', textAlign: 'center', flexShrink: 0 }}>
+                          {player.rank <= 3 ? (
+                            <i className={`bi ${rs.icon}`} style={{ color: rs.color, fontSize: '1rem' }}></i>
+                          ) : (
+                            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94A3B8' }}>#{player.rank}</span>
+                          )}
+                        </div>
+
+                        {/* Leader Avatar */}
+                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                          <img
+                            src={avatarUrl}
+                            alt={player.displayName}
+                            style={{ width: '34px', height: '34px', borderRadius: '0px', objectFit: 'cover' }}
+                          />
+                          {player.appliedBadgeUrl && (
+                            <span 
+                              className="badge-sweep-wrap" 
+                              data-effect={player.appliedBadgeEffect || 'light-sweep'}
+                              style={{
+                                bottom: '-3px',
+                                right: '-3px',
+                                width: '14px',
+                                height: '14px',
+                                ['--badge-color' as any]: hexToRgbStr(player.appliedBadgeColor || '#FFFFFF')
+                              }}
+                            >
+                              <img src={player.appliedBadgeUrl} alt="Badge" style={{ width: '14px', height: '14px' }} />
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Leader Info */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontSize: '0.8rem', fontWeight: isMe ? 700 : 600,
+                            color: isMe ? '#E2E8F0' : '#FFFFFF',
+                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                          }}>
+                            {player.displayName}
+                            <span style={{ marginLeft: '4px', fontSize: '0.58rem', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>LDR</span>
+                            {isMe && <span style={{ marginLeft: '4px', fontSize: '0.58rem', background: 'rgba(250,204,21,0.15)', color: '#FACC15', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>YOU</span>}
+                          </div>
+                          {player.inGameUsername && (
+                            <div style={{ fontSize: '0.62rem', color: '#94A3B8', marginTop: '1px' }}>{player.inGameUsername}</div>
+                          )}
+                        </div>
+
+                        {/* Leader Individual Kills */}
+                        <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '40px' }}>
+                          <div style={{ fontSize: '0.55rem', color: '#94A3B8', marginBottom: '1px' }}>Ldr Kills</div>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#CBD5E1' }}>{player.leaderKills ?? player.kills ?? 0}</div>
+                        </div>
+
+                        {/* Team Total Kills */}
+                        <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '40px' }}>
+                          <div style={{ fontSize: '0.55rem', color: '#FACC15', marginBottom: '1px', fontWeight: 600 }}>Team Kills</div>
+                          <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#FACC15' }}>{player.kills ?? 0}</div>
+                        </div>
+
+                        {/* Winnings */}
+                        <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '54px' }}>
+                          <div style={{ fontSize: '0.55rem', color: '#4ADE80', marginBottom: '1px' }}>Earned</div>
+                          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#4ADE80' }}>
+                            {(player.winnings || 0) > 0 ? `₹${player.winnings.toFixed(0)}` : '—'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Teammates List */}
+                      {teammates.map((tm, tmIdx) => (
+                        <div
+                          key={tmIdx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            padding: '6px 12px 6px 52px',
+                            background: 'rgba(0,0,0,0.18)',
+                            borderBottom: tmIdx < teammates.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+                          }}
+                        >
+                          <i className="bi bi-arrow-return-right" style={{ color: '#475569', fontSize: '0.65rem', flexShrink: 0 }}></i>
+                          
+                          <div style={{ width: '24px', height: '24px', flexShrink: 0, border: '0.5px solid rgba(255,255,255,0.08)' }}>
+                            <img
+                              src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(tm.username)}`}
+                              alt="tm"
+                              style={{ width: '24px', height: '24px', objectFit: 'cover' }}
+                            />
+                          </div>
+
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '0.72rem', color: '#CBD5E1', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {tm.username}
+                            </div>
+                            <div style={{ fontSize: '0.58rem', color: '#475569' }}>UID: {tm.gameUid}</div>
+                          </div>
+
+                          <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '40px', paddingRight: '98px' }}>
+                            <div style={{ fontSize: '0.55rem', color: '#94A3B8', marginBottom: '1px' }}>Kills</div>
+                            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#CBD5E1' }}>{tm.kills}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
 
                 return (
                   <div

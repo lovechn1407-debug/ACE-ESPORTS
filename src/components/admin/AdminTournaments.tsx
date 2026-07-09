@@ -543,11 +543,7 @@ const AdminTournaments: React.FC = () => {
                   else if (t.status === 'cancelled') statusColor = 'danger';
 
                   const regCount = t.registeredPlayers 
-                    ? Object.values(t.registeredPlayers).reduce((acc: number, p: any) => {
-                        if (t.mode === 'Duo' && p.teammateUsername) return acc + 2;
-                        if (t.mode === 'Squad') return acc + 1 + (p.teammateUsername ? 1 : 0) + (p.teammate2Username ? 1 : 0) + (p.teammate3Username ? 1 : 0);
-                        return acc + 1;
-                      }, 0)
+                    ? Object.keys(t.registeredPlayers).length  // 1 team = 1 slot
                     : 0;
                   const spotsColor = regCount >= t.maxPlayers ? 'text-danger fw-bold' : 'text-secondary';
 
@@ -1103,63 +1099,113 @@ const AdminTournaments: React.FC = () => {
                 <div className="spinner-border text-warning" role="status"></div>
                 <div className="text-secondary small mt-2">Retrieving player entries...</div>
               </div>
+            ) : registeredPlayersList.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '380px', overflowY: 'auto' }} className="mb-4">
+                {registeredPlayersList.map((player, idx) => (
+                  <div
+                    key={player.uid}
+                    style={{
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      border: '1px solid rgba(124, 58, 237, 0.18)',
+                      background: 'rgba(15,21,38,0.7)',
+                    }}
+                  >
+                    {/* Leader Row */}
+                    <div
+                      style={{
+                        background: "url('/images/list_item_bg.webp') no-repeat center center",
+                        backgroundSize: 'cover',
+                        padding: '9px 14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        borderBottom: player.teammates?.length > 0 ? '1px solid rgba(124,58,237,0.15)' : 'none',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                        {/* Avatar */}
+                        <div style={{ width: '36px', height: '36px', flexShrink: 0 }}>
+                          <img
+                            src={player.photoURL || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(player.displayName)}`}
+                            alt="avatar"
+                            style={{ width: '36px', height: '36px', objectFit: 'cover', border: '0.5px solid rgba(255,255,255,0.15)' }}
+                          />
+                        </div>
+                        {/* Name + details */}
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 700, color: '#FFFFFF', fontSize: '0.82rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '130px' }}>
+                              {player.displayName}
+                            </span>
+                            <span style={{ fontSize: '0.65rem', background: 'rgba(250,204,21,0.12)', color: '#FACC15', padding: '1px 5px', borderRadius: '3px', fontWeight: 600, flexShrink: 0 }}>
+                              {idx + 1}
+                            </span>
+                            {player.teammates?.length > 0 && (
+                              <span style={{ fontSize: '0.6rem', color: '#94A3B8', background: 'rgba(255,255,255,0.06)', padding: '1px 5px', borderRadius: '3px', flexShrink: 0 }}>
+                                {player.teammates.length === 1 ? 'Duo' : 'Squad'}
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: '#7C3AED', fontWeight: 600 }}>
+                            {player.username} <span style={{ color: '#475569', fontWeight: 400 }}>· {player.gameUid}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Right side: fee + remove */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                        <span style={{ fontSize: '0.75rem', color: '#4ADE80', fontWeight: 700 }}>₹{player.entryFeePaid}</span>
+                        <button
+                          className="btn btn-sm btn-outline-danger py-1 px-2"
+                          onClick={() => {
+                            setRemovingPlayer(player);
+                            setRemoveReason('');
+                            setShowRemoveConfirm(true);
+                          }}
+                          style={{ fontSize: '0.68rem', fontWeight: 600 }}
+                        >
+                          <i className="bi bi-person-dash-fill"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Teammate Rows */}
+                    {player.teammates?.map((tm: any, tmIdx: number) => (
+                      <div
+                        key={tmIdx}
+                        style={{
+                          padding: '7px 14px 7px 60px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          borderBottom: tmIdx < player.teammates.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                          background: 'rgba(0,0,0,0.15)',
+                        }}
+                      >
+                        <i className="bi bi-arrow-return-right" style={{ color: '#475569', fontSize: '0.7rem', flexShrink: 0 }}></i>
+                        <div style={{ width: '28px', height: '28px', flexShrink: 0, border: '0.5px solid rgba(255,255,255,0.08)' }}>
+                          <img
+                            src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(tm.username)}`}
+                            alt="tm"
+                            style={{ width: '28px', height: '28px', objectFit: 'cover' }}
+                          />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', color: '#CBD5E1', fontWeight: 600 }}>{tm.username}</div>
+                          <div style={{ fontSize: '0.65rem', color: '#475569' }}>UID: {tm.gameUid}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             ) : (
-              <div className="table-responsive card bg-dark bg-opacity-25 border border-secondary border-opacity-10 mb-4" style={{ maxHeight: '350px' }}>
-                <table className="table table-dark table-hover mb-0 align-middle small text-start">
-                  <thead>
-                    <tr className="border-bottom border-secondary border-opacity-25" style={{ color: '#64748B' }}>
-                      <th className="py-2.5 ps-3">Player Detail</th>
-                      <th className="py-2.5">Game IGN</th>
-                      <th className="py-2.5">Game UID</th>
-                      <th className="py-2.5">Fee Paid</th>
-                      <th className="py-2.5 pe-3 text-end">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {registeredPlayersList.length > 0 ? (
-                      registeredPlayersList.map((player) => {
-                        const isTeammate = player.isTeammate;
-                        return (
-                          <tr key={player.uid} className="border-bottom border-secondary border-opacity-10" style={{ opacity: isTeammate ? 0.75 : 1 }}>
-                            <td className="py-2 ps-3" style={{ paddingLeft: isTeammate ? '32px' : '15px' }}>
-                              <div className={isTeammate ? 'text-secondary' : 'fw-bold text-white'}>
-                                {isTeammate ? `↳ Teammate of ${player.mainPlayerName}` : player.displayName}
-                              </div>
-                              {!isTeammate && <div className="text-secondary" style={{ fontSize: '0.72rem' }}>{player.email || 'No email'}</div>}
-                            </td>
-                            <td className={`py-2 font-monospace ${isTeammate ? 'text-white-50' : 'text-accent'}`}>{player.username}</td>
-                            <td className="py-2 font-monospace text-secondary">{player.gameUid}</td>
-                            <td className="py-2 text-success fw-bold">{isTeammate ? '-' : `₹${player.entryFeePaid}`}</td>
-                            <td className="py-2 pe-3 text-end">
-                              {!isTeammate && (
-                                <button 
-                                  className="btn btn-sm btn-outline-danger py-1 px-2"
-                                  onClick={() => {
-                                    setRemovingPlayer(player);
-                                    setRemoveReason('');
-                                    setShowRemoveConfirm(true);
-                                  }}
-                                  style={{ fontSize: '0.72rem', fontWeight: 600 }}
-                                >
-                                  <i className="bi bi-person-dash-fill"></i> Remove
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="text-center text-secondary py-5">
-                          <i className="bi bi-people fs-3 d-block mb-2"></i>
-                          No registered participants in this match yet.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div className="text-center text-secondary py-5 mb-4">
+                <i className="bi bi-people fs-3 d-block mb-2"></i>
+                No registered participants in this match yet.
               </div>
             )}
+
 
             <button className="btn-custom btn-custom-secondary w-100" onClick={() => setShowPlayersModal(false)}>
               Close Roster

@@ -26,7 +26,17 @@ interface PlayerRow {
   totalEarnings: number;
   totalMatches: number;
   wonMatches: number;
-  kills: number;
+  kills: number; // calculated total team kills
+  leaderKills: number;
+  teammateUsername?: string;
+  teammateGameUid?: string;
+  teammateKills: number;
+  teammate2Username?: string;
+  teammate2GameUid?: string;
+  teammate2Kills: number;
+  teammate3Username?: string;
+  teammate3GameUid?: string;
+  teammate3Kills: number;
   extraAmount: number;
   rank: string; // string to allow empty input
 }
@@ -98,7 +108,16 @@ const AdminTournamentManagement: React.FC = () => {
         const uid = uids[index];
         const regData = registered[uid];
         const resData = resultsMap[uid] || {};
-        
+
+        const leaderKills = resData.leaderKills ?? (resData.kills ?? 0);
+        const teammateKills = resData.teammateKills ?? 0;
+        const teammate2Kills = resData.teammate2Kills ?? 0;
+        const teammate3Kills = resData.teammate3Kills ?? 0;
+        const totalKills = leaderKills + 
+          (regData.teammateUsername ? teammateKills : 0) + 
+          (regData.teammate2Username ? teammate2Kills : 0) + 
+          (regData.teammate3Username ? teammate3Kills : 0);
+
         if (s.exists()) {
           const u = s.val();
           return {
@@ -112,7 +131,17 @@ const AdminTournamentManagement: React.FC = () => {
             totalEarnings: u.totalEarnings || 0,
             totalMatches: u.totalMatches || 0,
             wonMatches: u.wonMatches || 0,
-            kills: resData.kills ?? 0,
+            kills: totalKills,
+            leaderKills,
+            teammateUsername: regData.teammateUsername,
+            teammateGameUid: regData.teammateGameUid,
+            teammateKills,
+            teammate2Username: regData.teammate2Username,
+            teammate2GameUid: regData.teammate2GameUid,
+            teammate2Kills,
+            teammate3Username: regData.teammate3Username,
+            teammate3GameUid: regData.teammate3GameUid,
+            teammate3Kills,
             extraAmount: resData.extraAmount ?? 0,
             rank: resData.rank != null ? String(resData.rank) : ''
           };
@@ -128,7 +157,17 @@ const AdminTournamentManagement: React.FC = () => {
           totalEarnings: 0,
           totalMatches: 0,
           wonMatches: 0,
-          kills: 0,
+          kills: totalKills,
+          leaderKills,
+          teammateUsername: regData.teammateUsername,
+          teammateGameUid: regData.teammateGameUid,
+          teammateKills,
+          teammate2Username: regData.teammate2Username,
+          teammate2GameUid: regData.teammate2GameUid,
+          teammate2Kills,
+          teammate3Username: regData.teammate3Username,
+          teammate3GameUid: regData.teammate3GameUid,
+          teammate3Kills,
           extraAmount: 0,
           rank: ''
         };
@@ -149,13 +188,17 @@ const AdminTournamentManagement: React.FC = () => {
     }
   };
 
-  const updatePlayerField = (uid: string, field: 'kills' | 'extraAmount' | 'rank', val: any) => {
+  const updatePlayerField = (uid: string, field: 'kills' | 'leaderKills' | 'teammateKills' | 'teammate2Kills' | 'teammate3Kills' | 'extraAmount' | 'rank', val: any) => {
     setPlayers(prev => prev.map(p => {
       if (p.uid === uid) {
-        return {
-          ...p,
-          [field]: val
-        };
+        const next = { ...p, [field]: val };
+        // Recalculate total kills if any component changes
+        const lKills = Number(next.leaderKills) || 0;
+        const tm1Kills = next.teammateUsername ? (Number(next.teammateKills) || 0) : 0;
+        const tm2Kills = next.teammate2Username ? (Number(next.teammate2Kills) || 0) : 0;
+        const tm3Kills = next.teammate3Username ? (Number(next.teammate3Kills) || 0) : 0;
+        next.kills = lKills + tm1Kills + tm2Kills + tm3Kills;
+        return next;
       }
       return p;
     }));
@@ -233,6 +276,30 @@ const AdminTournamentManagement: React.FC = () => {
         };
         updates[`users/${p.uid}/matchHistory/${selectedTourney.id}`] = matchHistoryData;
 
+        // Build teammates array for results display
+        const teammatesResultList: any[] = [];
+        if (p.teammateUsername) {
+          teammatesResultList.push({
+            username: p.teammateUsername,
+            gameUid: p.teammateGameUid || 'N/A',
+            kills: Number(p.teammateKills) || 0
+          });
+        }
+        if (p.teammate2Username) {
+          teammatesResultList.push({
+            username: p.teammate2Username,
+            gameUid: p.teammate2GameUid || 'N/A',
+            kills: Number(p.teammate2Kills) || 0
+          });
+        }
+        if (p.teammate3Username) {
+          teammatesResultList.push({
+            username: p.teammate3Username,
+            gameUid: p.teammate3GameUid || 'N/A',
+            kills: Number(p.teammate3Kills) || 0
+          });
+        }
+
         // Results entry
         fullResults.push({
           uid: p.uid,
@@ -244,6 +311,11 @@ const AdminTournamentManagement: React.FC = () => {
           appliedBadgeColor: freshUser.appliedBadgeColor || '',
           rank: rankNum,
           kills: p.kills,
+          leaderKills: Number(p.leaderKills) || 0,
+          teammateKills: Number(p.teammateKills) || 0,
+          teammate2Kills: Number(p.teammate2Kills) || 0,
+          teammate3Kills: Number(p.teammate3Kills) || 0,
+          teammates: teammatesResultList,
           extraAmount: Number(p.extraAmount) || 0,
           winnings: totalPrize
         });
@@ -464,14 +536,14 @@ const AdminTournamentManagement: React.FC = () => {
               </div>
 
               <div className="table-responsive">
-                <table className="table table-dark table-hover mb-0">
+                <table className="table table-dark table-hover mb-0 align-middle">
                   <thead>
                     <tr>
-                      <th>Account</th>
-                      <th>Game IGN</th>
-                      <th>Game UID</th>
-                      <th>Per Kill Fee</th>
-                      <th>Kills</th>
+                      <th className="text-start">Team Member</th>
+                      <th className="text-start">Game IGN & UID</th>
+                      <th>Per Kill Prize</th>
+                      <th>Individual Kills</th>
+                      <th>Total Kills</th>
                       <th>Bonus Prize (₹)</th>
                       <th>Rank</th>
                       <th className="text-end">Calculated Prize</th>
@@ -479,52 +551,158 @@ const AdminTournamentManagement: React.FC = () => {
                   </thead>
                   <tbody>
                     {players.length > 0 ? (
-                      players.map(p => (
-                        <tr key={p.uid}>
-                          <td className="align-middle text-start">{p.displayName}</td>
-                          <td className="align-middle text-secondary text-start">{p.username}</td>
-                          <td className="align-middle text-secondary font-monospace small">{p.gameUid}</td>
-                          <td className="align-middle">₹{selectedTourney?.perKillPrize || 0}</td>
-                          
-                          <td className="align-middle">
-                            <input 
-                              type="number" 
-                              className="form-control form-control-sm text-center" 
-                              style={{ width: '70px' }}
-                              value={p.kills} 
-                              onChange={(e) => updatePlayerField(p.uid, 'kills', Math.max(0, Number(e.target.value)))}
-                              disabled={isLocked}
-                            />
-                          </td>
-                          <td className="align-middle">
-                            <input 
-                              type="number" 
-                              className="form-control form-control-sm text-center" 
-                              style={{ width: '90px' }}
-                              value={p.extraAmount || ''} 
-                              onChange={(e) => updatePlayerField(p.uid, 'extraAmount', Math.max(0, parseFloat(e.target.value) || 0))}
-                              disabled={isLocked}
-                            />
-                          </td>
-                          <td className="align-middle">
-                            <input 
-                              type="number" 
-                              className="form-control form-control-sm text-center" 
-                              style={{ width: '70px' }}
-                              value={p.rank} 
-                              onChange={(e) => updatePlayerField(p.uid, 'rank', e.target.value)}
-                              placeholder="Rank"
-                              disabled={isLocked}
-                            />
-                          </td>
-                          <td className="align-middle text-end text-accent fw-bold fs-5">
-                            ₹{calculateRowWinnings(p).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))
+                      players.map(p => {
+                        const hasTeammates = !!(p.teammateUsername || p.teammate2Username || p.teammate3Username);
+                        const rows = [];
+
+                        // 1. Leader Row
+                        rows.push(
+                          <tr key={p.uid + '-leader'} style={{ borderBottom: hasTeammates ? 'none' : undefined }}>
+                            <td className="text-start">
+                              <div className="fw-bold text-white">{p.displayName}</div>
+                              <span style={{ fontSize: '0.62rem', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>
+                                LEADER
+                              </span>
+                            </td>
+                            <td className="text-start">
+                              <div className="text-accent small fw-semibold">{p.username}</div>
+                              <div className="text-secondary small font-monospace">{p.gameUid}</div>
+                            </td>
+                            <td>₹{selectedTourney?.perKillPrize || 0}</td>
+                            
+                            <td>
+                              <input 
+                                type="number" 
+                                className="form-control form-control-sm text-center mx-auto" 
+                                style={{ width: '70px' }}
+                                value={p.leaderKills} 
+                                onChange={(e) => updatePlayerField(p.uid, 'leaderKills', Math.max(0, Number(e.target.value)))}
+                                disabled={isLocked}
+                              />
+                            </td>
+                            <td className="fw-bold text-warning fs-6">
+                              {p.kills}
+                            </td>
+                            <td>
+                              <input 
+                                type="number" 
+                                className="form-control form-control-sm text-center mx-auto" 
+                                style={{ width: '80px' }}
+                                value={p.extraAmount || ''} 
+                                onChange={(e) => updatePlayerField(p.uid, 'extraAmount', Math.max(0, parseFloat(e.target.value) || 0))}
+                                disabled={isLocked}
+                              />
+                            </td>
+                            <td>
+                              <input 
+                                type="number" 
+                                className="form-control form-control-sm text-center mx-auto" 
+                                style={{ width: '70px' }}
+                                value={p.rank} 
+                                onChange={(e) => updatePlayerField(p.uid, 'rank', e.target.value)}
+                                placeholder="Rank"
+                                disabled={isLocked}
+                              />
+                            </td>
+                            <td className="text-end text-accent fw-bold fs-5">
+                              ₹{calculateRowWinnings(p).toFixed(2)}
+                            </td>
+                          </tr>
+                        );
+
+                        // 2. Teammate Rows
+                        if (p.teammateUsername) {
+                          rows.push(
+                            <tr key={p.uid + '-tm1'} style={{ background: 'rgba(0,0,0,0.15)', borderBottom: (p.teammate2Username || p.teammate3Username) ? 'none' : undefined }}>
+                              <td className="text-start ps-4">
+                                <span className="text-secondary small"><i className="bi bi-arrow-return-right me-1"></i>Teammate 1</span>
+                              </td>
+                              <td className="text-start">
+                                <div className="text-white-50 small">{p.teammateUsername}</div>
+                                <div className="text-secondary small font-monospace">{p.teammateGameUid || 'N/A'}</div>
+                              </td>
+                              <td className="text-secondary">—</td>
+                              <td>
+                                <input 
+                                  type="number" 
+                                  className="form-control form-control-sm text-center mx-auto" 
+                                  style={{ width: '70px' }}
+                                  value={p.teammateKills} 
+                                  onChange={(e) => updatePlayerField(p.uid, 'teammateKills', Math.max(0, Number(e.target.value)))}
+                                  disabled={isLocked}
+                                />
+                              </td>
+                              <td className="text-secondary">—</td>
+                              <td className="text-secondary">—</td>
+                              <td className="text-secondary">—</td>
+                              <td className="text-secondary">—</td>
+                            </tr>
+                          );
+                        }
+
+                        if (p.teammate2Username) {
+                          rows.push(
+                            <tr key={p.uid + '-tm2'} style={{ background: 'rgba(0,0,0,0.15)', borderBottom: p.teammate3Username ? 'none' : undefined }}>
+                              <td className="text-start ps-4">
+                                <span className="text-secondary small"><i className="bi bi-arrow-return-right me-1"></i>Teammate 2</span>
+                              </td>
+                              <td className="text-start">
+                                <div className="text-white-50 small">{p.teammate2Username}</div>
+                                <div className="text-secondary small font-monospace">{p.teammate2GameUid || 'N/A'}</div>
+                              </td>
+                              <td className="text-secondary">—</td>
+                              <td>
+                                <input 
+                                  type="number" 
+                                  className="form-control form-control-sm text-center mx-auto" 
+                                  style={{ width: '70px' }}
+                                  value={p.teammate2Kills} 
+                                  onChange={(e) => updatePlayerField(p.uid, 'teammate2Kills', Math.max(0, Number(e.target.value)))}
+                                  disabled={isLocked}
+                                />
+                              </td>
+                              <td className="text-secondary">—</td>
+                              <td className="text-secondary">—</td>
+                              <td className="text-secondary">—</td>
+                              <td className="text-secondary">—</td>
+                            </tr>
+                          );
+                        }
+
+                        if (p.teammate3Username) {
+                          rows.push(
+                            <tr key={p.uid + '-tm3'} style={{ background: 'rgba(0,0,0,0.15)' }}>
+                              <td className="text-start ps-4">
+                                <span className="text-secondary small"><i className="bi bi-arrow-return-right me-1"></i>Teammate 3</span>
+                              </td>
+                              <td className="text-start">
+                                <div className="text-white-50 small">{p.teammate3Username}</div>
+                                <div className="text-secondary small font-monospace">{p.teammate3GameUid || 'N/A'}</div>
+                              </td>
+                              <td className="text-secondary">—</td>
+                              <td>
+                                <input 
+                                  type="number" 
+                                  className="form-control form-control-sm text-center mx-auto" 
+                                  style={{ width: '70px' }}
+                                  value={p.teammate3Kills} 
+                                  onChange={(e) => updatePlayerField(p.uid, 'teammate3Kills', Math.max(0, Number(e.target.value)))}
+                                  disabled={isLocked}
+                                />
+                              </td>
+                              <td className="text-secondary">—</td>
+                              <td className="text-secondary">—</td>
+                              <td className="text-secondary">—</td>
+                              <td className="text-secondary">—</td>
+                            </tr>
+                          );
+                        }
+
+                        return rows;
+                      })
                     ) : (
                       <tr>
-                        <td colSpan={8} className="text-center text-secondary py-3">No players registered for this match.</td>
+                        <td colSpan={8} className="text-center text-secondary py-3">No teams registered for this match.</td>
                       </tr>
                     )}
                   </tbody>
