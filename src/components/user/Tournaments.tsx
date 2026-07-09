@@ -249,6 +249,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
             appliedBadgeUrl: s.val().appliedBadgeUrl || '',
             username: reg.username,
             gameUid: reg.gameUid,
+            role: s.val().isAdmin ? 'ADMIN' : '',
             teammates
           } : {
             uid,
@@ -256,6 +257,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
             username: reg.username,
             gameUid: reg.gameUid,
             appliedBadgeUrl: '',
+            role: '',
             teammates
           };
           
@@ -1171,12 +1173,13 @@ const Tournaments: React.FC<TournamentsProps> = ({
                               justifyContent: 'space-between',
                               padding: '8px 14px',
                               borderRadius: '8px',
-                              background: 'rgba(255,255,255,0.015)',
-                              border: '1px solid rgba(255,255,255,0.04)',
+                              background: "url('/images/list_item_bg.webp') no-repeat center center",
+                              backgroundSize: 'cover',
+                              border: '1px solid rgba(124, 58, 237, 0.1)',
                             }}
                           >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <span style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 800, width: '22px', textAlign: 'center' }}>
+                              <span style={{ fontSize: '0.9rem', color: '#FFFFFF', fontWeight: 800, width: '22px', textAlign: 'center' }}>
                                 #{idx + 1}
                               </span>
                               
@@ -1208,7 +1211,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                             </div>
 
                             <span style={{
-                              fontSize: '0.74rem', color: '#64748B', fontWeight: 600,
+                              fontSize: '0.74rem', color: '#94A3B8', fontWeight: 600,
                               background: 'rgba(255,255,255,0.02)',
                               border: '1px solid rgba(255,255,255,0.05)',
                               padding: '2px 8px', borderRadius: '4px'
@@ -1218,110 +1221,249 @@ const Tournaments: React.FC<TournamentsProps> = ({
                           </div>
                         ))}
                       </div>
-                    ) : (
-                      /* ───── DUO / SQUAD TEAM CARDS ───── */
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '14px' }}>
+                    ) : selectedTourney.mode === 'Duo' ? (
+                      /* ───── DUO MODE (EXACT 2.png) ───── */
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {registeredPlayersList.map((team, idx) => (
                           <div 
                             key={team.uid}
                             className="animate-fade-in"
                             style={{
-                              background: 'rgba(255,255,255,0.012)',
-                              border: '1px solid rgba(255,255,255,0.05)',
-                              borderRadius: '10px',
-                              overflow: 'hidden'
+                              display: 'flex',
+                              alignItems: 'stretch',
+                              borderRadius: '4px',
+                              overflow: 'hidden',
+                              border: '1px solid rgba(124, 58, 237, 0.15)',
+                              boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
                             }}
                           >
-                            {/* Team Header */}
+                            {/* Left vertical index block */}
                             <div style={{
-                              background: 'rgba(255,255,255,0.02)',
-                              padding: '8px 14px',
-                              borderBottom: '1px solid rgba(255,255,255,0.04)',
+                              width: '42px',
+                              background: '#7c3aed', // Purple vertical index strip
+                              color: '#FFFFFF',
+                              fontWeight: 'bold',
+                              fontSize: '0.98rem',
                               display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center'
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0
                             }}>
-                              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#94A3B8', letterSpacing: '0.05em' }}>
-                                TEAM #{idx + 1}
-                              </span>
-                              <span style={{ fontSize: '0.66rem', color: '#64748B' }}>
-                                Registered by {team.displayName}
-                              </span>
+                              #{idx + 1}
                             </div>
 
-                            {/* Team Members Grid */}
-                            <div style={{ padding: '12px 14px' }}>
-                              <div style={{ display: 'grid', gridTemplateColumns: selectedTourney.mode === 'Duo' ? '1fr 1fr' : '1fr 1fr', gap: '12px' }}>
-                                {/* Leader */}
-                                <div style={{
-                                  background: 'rgba(250,204,21,0.02)',
-                                  border: '1px solid rgba(250,204,21,0.08)',
-                                  borderRadius: '6px',
-                                  padding: '8px 10px',
+                            {/* Right content column */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                              {/* Leader row */}
+                              <div 
+                                style={{
+                                  background: "url('/images/list_item_bg.webp') no-repeat center center",
+                                  backgroundSize: 'cover',
+                                  padding: '8px 14px',
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: '10px'
-                                }}>
-                                  <div style={{ position: 'relative', width: '32px', height: '32px', flexShrink: 0 }}>
+                                  justifyContent: 'space-between',
+                                  borderBottom: '1px solid rgba(124, 58, 237, 0.15)'
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                                  <div style={{ position: 'relative', width: '38px', height: '38px', flexShrink: 0 }}>
                                     <img 
                                       src={team.photoURL || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.username || team.displayName)}`} 
-                                      alt="leader avatar" 
+                                      alt="avatar" 
                                       className="w-100 h-100 object-fit-cover"
-                                      style={{ border: '1px solid rgba(250,204,21,0.12)', borderRadius: '50%' }}
+                                      style={{ border: '1.5px solid rgba(255,255,255,0.06)', borderRadius: '50%' }}
                                       onError={(e) => {
                                         (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.uid)}`;
                                       }}
                                     />
                                     {team.appliedBadgeUrl && (
-                                      <span className="badge-sweep-wrap" style={{ position: 'absolute', bottom: '-4px', right: '-4px', width: '15px', height: '15px', borderRadius: '50%', overflow: 'hidden' }}>
+                                      <span className="badge-sweep-wrap" style={{ position: 'absolute', bottom: '-4px', right: '-4px', width: '16px', height: '16px', borderRadius: '50%', overflow: 'hidden' }}>
                                         <img src={team.appliedBadgeUrl} alt="Badge" className="w-100 h-100 object-fit-contain" />
                                       </span>
                                     )}
                                   </div>
-                                  <div style={{ overflow: 'hidden' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                      <span style={{ fontSize: '0.62rem', color: '#FACC15', background: 'rgba(250,204,21,0.1)', padding: '1px 4px', borderRadius: '3px', fontWeight: 700, flexShrink: 0 }}>LDR</span>
-                                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#FFFFFF', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                                        {team.username}
-                                      </span>
+
+                                  <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#FACC15', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                      {team.username}
                                     </div>
-                                    <div style={{ fontSize: '0.64rem', color: '#94A3B8', marginTop: '1px' }}>
+                                    <div style={{ fontSize: '0.68rem', color: '#94A3B8', marginTop: '1px' }}>
                                       UID: {team.gameUid}
                                     </div>
                                   </div>
                                 </div>
 
-                                {/* Teammates */}
-                                {team.teammates && team.teammates.map((teammate: any, tIdx: number) => (
+                                {team.role && (
+                                  <span style={{
+                                    border: '1px solid rgba(250, 204, 21, 0.6)',
+                                    color: '#FACC15',
+                                    padding: '2px 8px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.62rem',
+                                    fontWeight: 'bold',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.04em',
+                                    background: 'rgba(250, 204, 21, 0.05)'
+                                  }}>
+                                    {team.role}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Teammate row */}
+                              {team.teammates && team.teammates[0] ? (
+                                <div 
+                                  style={{
+                                    background: '#1F123C', // exact teammate row background
+                                    padding: '6px 14px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between'
+                                  }}
+                                >
+                                  <span style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#FFFFFF' }}>
+                                    {team.teammates[0].username}
+                                  </span>
+                                  <span style={{ fontSize: '0.7rem', color: '#94A3B8', fontFamily: 'monospace' }}>
+                                    {team.teammates[0].gameUid}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div 
+                                  style={{
+                                    background: '#1F123C',
+                                    padding: '6px 14px',
+                                    fontSize: '0.74rem',
+                                    color: '#64748B',
+                                    fontStyle: 'italic'
+                                  }}
+                                >
+                                  No Teammate registered
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      /* ───── SQUAD MODE (EXACT 1.png) ───── */
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {registeredPlayersList.map((team, idx) => (
+                          <div 
+                            key={team.uid}
+                            className="animate-fade-in"
+                            style={{
+                              borderRadius: '4px',
+                              overflow: 'hidden',
+                              boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+                              border: '1px solid rgba(124, 58, 237, 0.15)'
+                            }}
+                          >
+                            {/* Leader Row */}
+                            <div 
+                              style={{
+                                background: "url('/images/list_item_bg.webp') no-repeat center center",
+                                backgroundSize: 'cover',
+                                padding: '8px 14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                borderBottom: '1px solid rgba(124, 58, 237, 0.12)'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                                {/* Index (inside top card) */}
+                                <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#FFFFFF', minWidth: '24px' }}>
+                                  #{idx + 1}
+                                </span>
+                                
+                                <div style={{ position: 'relative', width: '38px', height: '38px', flexShrink: 0 }}>
+                                  <img 
+                                    src={team.photoURL || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.username || team.displayName)}`} 
+                                    alt="avatar" 
+                                    className="w-100 h-100 object-fit-cover"
+                                    style={{ border: '1.5px solid rgba(255,255,255,0.06)', borderRadius: '50%' }}
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(team.uid)}`;
+                                    }}
+                                  />
+                                  {team.appliedBadgeUrl && (
+                                    <span className="badge-sweep-wrap" style={{ position: 'absolute', bottom: '-4px', right: '-4px', width: '16px', height: '16px', borderRadius: '50%', overflow: 'hidden' }}>
+                                      <img src={team.appliedBadgeUrl} alt="Badge" className="w-100 h-100 object-fit-contain" />
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#FACC15', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                    {team.username}
+                                  </div>
+                                  <div style={{ fontSize: '0.68rem', color: '#94A3B8', marginTop: '1px' }}>
+                                    UID: {team.gameUid}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {team.role && (
+                                <span style={{
+                                  border: '1px solid rgba(250, 204, 21, 0.6)',
+                                  color: '#FACC15',
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  fontSize: '0.62rem',
+                                  fontWeight: 'bold',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.04em',
+                                  background: 'rgba(250, 204, 21, 0.05)'
+                                }}>
+                                  {team.role}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Teammates horizontal grid (Columns: 2, 3, 4) */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', background: '#0D1526', borderTop: 'none' }}>
+                              {[0, 1, 2].map((tIdx) => {
+                                const mate = team.teammates ? team.teammates[tIdx] : null;
+                                return (
                                   <div 
                                     key={tIdx}
                                     style={{
-                                      background: 'rgba(255,255,255,0.015)',
-                                      border: '1px solid rgba(255,255,255,0.04)',
-                                      borderRadius: '6px',
-                                      padding: '8px 10px',
                                       display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '10px'
+                                      alignItems: 'stretch',
+                                      background: '#1F123C', // Teammate container background
+                                      borderRight: tIdx < 2 ? '1px solid rgba(124, 58, 237, 0.15)' : 'none',
+                                      minWidth: 0
                                     }}
                                   >
-                                    <div style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.03)', borderRadius: '50%', color: '#64748B', flexShrink: 0 }}>
-                                      <i className="bi bi-person-fill" style={{ fontSize: '0.95rem' }}></i>
+                                    {/* Number block (2, 3, 4) */}
+                                    <div style={{
+                                      width: '24px',
+                                      background: '#581C87', // Dark purple index block for teammates
+                                      color: '#FFFFFF',
+                                      fontWeight: 'bold',
+                                      fontSize: '0.78rem',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      flexShrink: 0
+                                    }}>
+                                      {tIdx + 2}
                                     </div>
-                                    <div style={{ overflow: 'hidden' }}>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <span style={{ fontSize: '0.62rem', color: '#94A3B8', background: 'rgba(255,255,255,0.05)', padding: '1px 4px', borderRadius: '3px', fontWeight: 600, flexShrink: 0 }}>P{tIdx + 2}</span>
-                                        <span style={{ fontSize: '0.8rem', fontWeight: 650, color: '#E2E8F0', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                                          {teammate.username}
-                                        </span>
-                                      </div>
-                                      <div style={{ fontSize: '0.64rem', color: '#94A3B8', marginTop: '1px' }}>
-                                        UID: {teammate.gameUid}
-                                      </div>
+                                    
+                                    {/* Name and UID */}
+                                    <div style={{ padding: '4px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
+                                      <span style={{ fontSize: '0.76rem', fontWeight: 'bold', color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {mate ? mate.username : '---'}
+                                      </span>
+                                      <span style={{ fontSize: '0.58rem', color: '#94A3B8', marginTop: '1px', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {mate ? mate.gameUid : '---'}
+                                      </span>
                                     </div>
                                   </div>
-                                ))}
-                              </div>
+                                );
+                              })}
                             </div>
                           </div>
                         ))}
