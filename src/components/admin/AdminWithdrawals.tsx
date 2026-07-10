@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ref, get, set, update, runTransaction, push, serverTimestamp } from 'firebase/database';
+import { ref, get, update, runTransaction, push, serverTimestamp } from 'firebase/database';
 import { db } from '../../firebase';
 
 interface Withdrawal {
@@ -74,26 +74,46 @@ const AdminWithdrawals: React.FC = () => {
     }
 
     setActionLoading(true);
-    const updates: any = {};
     const processedTime = serverTimestamp();
 
     try {
+      // 1. Transaction to check and lock status to completed/rejected
+      let alreadyProcessed = false;
+      await runTransaction(ref(db, `withdrawals/${selectedReq.id}`), (currReq) => {
+        if (!currReq) return currReq;
+        if (currReq.status !== 'pending') {
+          alreadyProcessed = true;
+          return; // Aborts transaction
+        }
+        currReq.status = actionType === 'approve' ? 'completed' : 'rejected';
+        if (actionType === 'approve') {
+          currReq.adminNote = noteText.trim();
+        } else {
+          currReq.rejectReason = noteText.trim();
+        }
+        currReq.processedAt = processedTime;
+        return currReq;
+      });
+
+      if (alreadyProcessed) {
+        alert('This withdrawal request has already been processed.');
+        setShowModal(false);
+        fetchWithdrawals();
+        return;
+      }
+
+      const updates: any = {};
+
       if (actionType === 'approve') {
-        // Just mark as completed
-        updates[`withdrawals/${selectedReq.id}/status`] = 'completed';
-        updates[`withdrawals/${selectedReq.id}/adminNote`] = noteText.trim();
-        updates[`withdrawals/${selectedReq.id}/processedAt`] = processedTime;
-        
-        await update(ref(db), updates);
-        
         // Notify user
         const notifKey = push(ref(db, `users/${selectedReq.userId}/notifications`)).key;
-        await set(ref(db, `users/${selectedReq.userId}/notifications/${notifKey}`), {
+        updates[`users/${selectedReq.userId}/notifications/${notifKey}`] = {
           title: 'Withdrawal Approved',
           message: `Your withdrawal request of ₹${selectedReq.amount.toFixed(2)} has been processed. Info: ${noteText.trim()}`,
           timestamp: serverTimestamp()
-        });
+        };
 
+        await update(ref(db), updates);
         alert('Request approved successfully.');
       } else {
         // REJECT workflow: must refund winningCash and balance
@@ -108,30 +128,25 @@ const AdminWithdrawals: React.FC = () => {
           return prof;
         });
 
-        // Set status
-        updates[`withdrawals/${selectedReq.id}/status`] = 'rejected';
-        updates[`withdrawals/${selectedReq.id}/rejectReason`] = noteText.trim();
-        updates[`withdrawals/${selectedReq.id}/processedAt`] = processedTime;
-        await update(ref(db), updates);
-
         // Transaction log for refund
         const txKey = push(ref(db, `transactions/${selectedReq.userId}`)).key;
-        await set(ref(db, `transactions/${selectedReq.userId}/${txKey}`), {
+        updates[`transactions/${selectedReq.userId}/${txKey}`] = {
           type: 'withdraw_failed_refund',
           amount: selectedReq.amount,
           description: `Withdrawal Rejected: ${noteText.trim()}`,
           timestamp: serverTimestamp(),
           balanceAfter: (await get(ref(db, `users/${selectedReq.userId}/balance`))).val()
-        });
+        };
 
         // Notify user
         const notifKey = push(ref(db, `users/${selectedReq.userId}/notifications`)).key;
-        await set(ref(db, `users/${selectedReq.userId}/notifications/${notifKey}`), {
+        updates[`users/${selectedReq.userId}/notifications/${notifKey}`] = {
           title: 'Withdrawal Rejected',
           message: `Withdrawal request of ₹${selectedReq.amount.toFixed(2)} was rejected. Reason: ${noteText.trim()}. Funds returned to winning balance.`,
           timestamp: serverTimestamp()
-        });
+        };
 
+        await update(ref(db), updates);
         alert('Request rejected. Funds returned to user.');
       }
 

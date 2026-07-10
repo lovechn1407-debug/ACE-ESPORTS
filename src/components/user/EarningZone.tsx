@@ -511,19 +511,30 @@ const EarningZone: React.FC<EarningZoneProps> = ({ onBack: _onBack }) => {
     setClaimLoadingId(mId);
 
     try {
+      let alreadyClaimed = false;
       await runTransaction(ref(db, `users/${currentUser.uid}`), (prof) => {
-        if (prof) {
-          prof.balance = (prof.balance || 0) + amount;
-          if (rType === 'coin') {
-            prof.winningCash = (prof.winningCash || 0) + amount;
-          } else {
-            prof.bonusCash = (prof.bonusCash || 0) + amount;
-          }
+        if (!prof) return prof;
+        if (!prof.claimedMissions) {
+          prof.claimedMissions = {};
+        }
+        if (prof.claimedMissions[mId] === true) {
+          alreadyClaimed = true;
+          return; // Aborts transaction
+        }
+        prof.claimedMissions[mId] = true;
+        prof.balance = (prof.balance || 0) + amount;
+        if (rType === 'coin') {
+          prof.winningCash = (prof.winningCash || 0) + amount;
+        } else {
+          prof.bonusCash = (prof.bonusCash || 0) + amount;
         }
         return prof;
       });
 
-      await set(ref(db, `users/${currentUser.uid}/claimedMissions/${mId}`), true);
+      if (alreadyClaimed) {
+        alert("This mission reward has already been claimed.");
+        return;
+      }
 
       const txRef = push(ref(db, `transactions/${currentUser.uid}`));
       await set(txRef, {
@@ -575,17 +586,30 @@ const EarningZone: React.FC<EarningZoneProps> = ({ onBack: _onBack }) => {
       const trackConfig = milestonesConfig[track] || {};
       const reward = trackConfig[amt] || { label: `₹50 Coins`, type: 'coin', value: 50 };
       const updates: any = {};
+      let alreadyClaimed = false;
 
       if (reward.type === 'coin') {
         // Direct coin payout to user balance
         await runTransaction(ref(db, `users/${currentUser.uid}`), (prof) => {
-          if (prof) {
-            prof.balance = (prof.balance || 0) + reward.value;
-            prof.winningCash = (prof.winningCash || 0) + reward.value;
-            prof.totalEarnings = (prof.totalEarnings || 0) + reward.value;
+          if (!prof) return prof;
+          if (!prof.claimedMilestones) {
+            prof.claimedMilestones = {};
           }
+          if (prof.claimedMilestones[claimKey] === true) {
+            alreadyClaimed = true;
+            return; // Aborts transaction
+          }
+          prof.claimedMilestones[claimKey] = true;
+          prof.balance = (prof.balance || 0) + reward.value;
+          prof.winningCash = (prof.winningCash || 0) + reward.value;
+          prof.totalEarnings = (prof.totalEarnings || 0) + reward.value;
           return prof;
         });
+
+        if (alreadyClaimed) {
+          alert(`Already Claimed: You have already claimed this milestone reward.`);
+          return;
+        }
 
         const txKey = push(ref(db, `transactions/${currentUser.uid}`)).key;
         updates[`transactions/${currentUser.uid}/${txKey}`] = {
@@ -598,6 +622,24 @@ const EarningZone: React.FC<EarningZoneProps> = ({ onBack: _onBack }) => {
         alert(`Congratulations! You claimed ₹${reward.value} coins directly to your wallet! 💸`);
       } else {
         // Voucher or custom reward: create a Claim ticket
+        await runTransaction(ref(db, `users/${currentUser.uid}`), (prof) => {
+          if (!prof) return prof;
+          if (!prof.claimedMilestones) {
+            prof.claimedMilestones = {};
+          }
+          if (prof.claimedMilestones[claimKey] === true) {
+            alreadyClaimed = true;
+            return; // Aborts transaction
+          }
+          prof.claimedMilestones[claimKey] = true;
+          return prof;
+        });
+
+        if (alreadyClaimed) {
+          alert(`Already Claimed: You have already claimed this milestone reward.`);
+          return;
+        }
+
         const claimRef = push(ref(db, 'earningZoneClaims'));
         await set(claimRef, {
           userId: currentUser.uid,
@@ -612,9 +654,6 @@ const EarningZone: React.FC<EarningZoneProps> = ({ onBack: _onBack }) => {
 
         alert(`Congratulations! You won "${reward.label}" for reaching the ${amt} ${trackName} checkpoint! Check "My Vouchers" once approved.`);
       }
-
-      // Mark as claimed
-      await set(ref(db, `users/${currentUser.uid}/claimedMilestones/${claimKey}`), true);
 
       // Create history log entry
       const logRef = push(ref(db, 'earningZoneHistory'));

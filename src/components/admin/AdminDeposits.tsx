@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ref, get, set, update, runTransaction, push, serverTimestamp } from 'firebase/database';
+import { ref, get, update, runTransaction, push, serverTimestamp } from 'firebase/database';
 import { db } from '../../firebase';
 
 
@@ -60,11 +60,29 @@ const AdminDeposits: React.FC = () => {
     if (!confirm(`Are you sure you want to approve this recharge of ₹${dep.amount} for ${dep.userName}? This will credit the balance to their wallet.`)) return;
 
     setActionLoading(true);
-    const updates: any = {};
     const processedTime = serverTimestamp();
 
     try {
-      // Transaction to credit wallet balance
+      // 1. Transaction to check and lock status to 'completed'
+      let alreadyProcessed = false;
+      await runTransaction(ref(db, `deposits/${dep.id}`), (currDep) => {
+        if (!currDep) return currDep;
+        if (currDep.status !== 'pending') {
+          alreadyProcessed = true;
+          return; // Aborts transaction
+        }
+        currDep.status = 'completed';
+        currDep.processedAt = processedTime;
+        return currDep;
+      });
+
+      if (alreadyProcessed) {
+        alert('This deposit request has already been processed.');
+        fetchDeposits();
+        return;
+      }
+
+      // 2. Transaction to credit wallet balance
       const userRef = ref(db, `users/${dep.userId}`);
       await runTransaction(userRef, (prof) => {
         if (prof) {
@@ -74,28 +92,27 @@ const AdminDeposits: React.FC = () => {
         return prof;
       });
 
-      // Update deposit request status
-      updates[`deposits/${dep.id}/status`] = 'completed';
-      updates[`deposits/${dep.id}/processedAt`] = processedTime;
-      await update(ref(db), updates);
-
+      const updates: any = {};
+      
       // Create transaction log
       const txKey = push(ref(db, `transactions/${dep.userId}`)).key;
-      await set(ref(db, `transactions/${dep.userId}/${txKey}`), {
+      updates[`transactions/${dep.userId}/${txKey}`] = {
         type: 'deposit',
         amount: dep.amount,
         description: `Deposit Approved (UTR: ${dep.utr})`,
         timestamp: serverTimestamp(),
         balanceAfter: (await get(ref(db, `users/${dep.userId}/balance`))).val()
-      });
+      };
 
       // Send Notification to user
       const notifKey = push(ref(db, `users/${dep.userId}/notifications`)).key;
-      await set(ref(db, `users/${dep.userId}/notifications/${notifKey}`), {
+      updates[`users/${dep.userId}/notifications/${notifKey}`] = {
         title: 'Deposit Approved',
         message: `Your deposit request of ₹${dep.amount.toFixed(2)} (UTR: ${dep.utr}) has been approved and credited to your wallet.`,
         timestamp: serverTimestamp()
-      });
+      };
+
+      await update(ref(db), updates);
 
       alert('Recharge approved and credited successfully.');
       fetchDeposits();
@@ -120,23 +137,41 @@ const AdminDeposits: React.FC = () => {
     if (!selectedReq || !rejectReasonText.trim()) return;
 
     setActionLoading(true);
-    const updates: any = {};
     const processedTime = serverTimestamp();
 
     try {
-      updates[`deposits/${selectedReq.id}/status`] = 'rejected';
-      updates[`deposits/${selectedReq.id}/rejectReason`] = rejectReasonText.trim();
-      updates[`deposits/${selectedReq.id}/processedAt`] = processedTime;
-      
-      await update(ref(db), updates);
+      // 1. Transaction to check and lock status to 'rejected'
+      let alreadyProcessed = false;
+      await runTransaction(ref(db, `deposits/${selectedReq.id}`), (currDep) => {
+        if (!currDep) return currDep;
+        if (currDep.status !== 'pending') {
+          alreadyProcessed = true;
+          return; // Aborts transaction
+        }
+        currDep.status = 'rejected';
+        currDep.rejectReason = rejectReasonText.trim();
+        currDep.processedAt = processedTime;
+        return currDep;
+      });
+
+      if (alreadyProcessed) {
+        alert('This deposit request has already been processed.');
+        setShowRejectModal(false);
+        fetchDeposits();
+        return;
+      }
+
+      const updates: any = {};
 
       // Send Notification to user
       const notifKey = push(ref(db, `users/${selectedReq.userId}/notifications`)).key;
-      await set(ref(db, `users/${selectedReq.userId}/notifications/${notifKey}`), {
+      updates[`users/${selectedReq.userId}/notifications/${notifKey}`] = {
         title: 'Deposit Request Rejected',
         message: `Your deposit request of ₹${selectedReq.amount.toFixed(2)} (UTR: ${selectedReq.utr}) was rejected. Reason: ${rejectReasonText.trim()}`,
         timestamp: serverTimestamp()
-      });
+      };
+
+      await update(ref(db), updates);
 
       alert('Request rejected successfully.');
       setShowRejectModal(false);
