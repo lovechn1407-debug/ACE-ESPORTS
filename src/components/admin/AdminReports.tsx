@@ -225,16 +225,22 @@ const AdminReports: React.FC = () => {
       if (!tSnap.exists()) throw new Error('Tournament details not found.');
       
       const tournament = tSnap.val();
-      const entryFee = tournament.entryFee || 0;
-      if (entryFee === 0) throw new Error('Cannot refund for a free match (Entry Fee is ₹0).');
+      if (tournament.status === 'refunded') {
+        throw new Error('This match has already been cancelled/refunded.');
+      }
 
+      const entryFee = tournament.entryFee || 0;
       const registeredPlayers = Object.keys(tournament.registeredPlayers || {});
       const fullResults = tournament.fullResults || [];
 
       if (registeredPlayers.length === 0) throw new Error('No registered players found.');
 
-      // 2. Fetch current wallet data of all players
-      const userPromises = registeredPlayers.map(uid => get(ref(db, `users/${uid}`)));
+      // 2. Fetch current wallet data of all registered players and results recipients
+      const allUids = new Set<string>([
+        ...registeredPlayers,
+        ...fullResults.map((r: any) => r.uid).filter(Boolean)
+      ]);
+      const userPromises = Array.from(allUids).map(uid => get(ref(db, `users/${uid}`)));
       const userSnaps = await Promise.all(userPromises);
       const allUsersData: Record<string, any> = {};
       userSnaps.forEach(snap => {
@@ -248,26 +254,32 @@ const AdminReports: React.FC = () => {
         const userProfile = allUsersData[uid];
         if (!userProfile || uid === accusedUid) continue; // Skip accused
 
-        const newBal = (userProfile.balance || 0) + entryFee;
-        updates[`users/${uid}/balance`] = newBal;
+        const regInfo = tournament.registeredPlayers?.[uid] || {};
+        const refundAmt = regInfo.amountPaid !== undefined ? regInfo.amountPaid : entryFee;
 
-        // Tx Log
-        const txKey = push(ref(db, `transactions/${uid}`)).key;
-        updates[`transactions/${uid}/${txKey}`] = {
-          type: 'refund',
-          amount: entryFee,
-          description: `Refund: ${tournament.name || 'Match'}`,
-          timestamp: serverTimestamp(),
-          balanceAfter: newBal
-        };
+        if (refundAmt > 0) {
+          const newBal = (userProfile.balance || 0) + refundAmt;
+          updates[`users/${uid}/balance`] = newBal;
 
-        // Notification
-        const notifKey = push(ref(db, `users/${uid}/notifications`)).key;
-        updates[`users/${uid}/notifications/${notifKey}`] = {
-          title: "Match Refunded",
-          message: `Entry fee of ₹${entryFee} refunded for '${tournament.name || 'Match'}' due to a fair play violation.`,
-          timestamp: serverTimestamp()
-        };
+          // Tx Log
+          const txKey = push(ref(db, `transactions/${uid}`)).key;
+          updates[`transactions/${uid}/${txKey}`] = {
+            type: 'refund',
+            amount: refundAmt,
+            description: `Refund: ${tournament.name || 'Match'}`,
+            timestamp: serverTimestamp(),
+            balanceAfter: newBal,
+            tournamentId: selectedGroup.tournamentId
+          };
+
+          // Notification
+          const notifKey = push(ref(db, `users/${uid}/notifications`)).key;
+          updates[`users/${uid}/notifications/${notifKey}`] = {
+            title: "Match Refunded",
+            message: `Entry fee of ₹${refundAmt} refunded for '${tournament.name || 'Match'}' due to a fair play violation.`,
+            timestamp: serverTimestamp()
+          };
+        }
       }
 
       // 4. Deduct Winnings from Result payouts (Winnings Normalize)
@@ -290,14 +302,18 @@ const AdminReports: React.FC = () => {
           amount: -res.winnings,
           description: `Winnings Deducted: ${tournament.name || 'Match'}`,
           timestamp: serverTimestamp(),
-          balanceAfter: newBal
+          balanceAfter: newBal,
+          tournamentId: selectedGroup.tournamentId
         };
       }
 
-      // 5. Mark report status as resolved
+      // 5. Mark tournament status as refunded
+      updates[`tournaments/${selectedGroup.tournamentId}/status`] = 'refunded';
+
+      // 6. Mark report status as resolved
       updates[`reports/${selectedGroup.tournamentId}/${accusedUid}/status`] = 'resolved';
 
-      // 6. Push all updates atomically
+      // 7. Push all updates atomically
       await update(ref(db), updates);
 
       alert('Refund and winnings rollback completed successfully.');

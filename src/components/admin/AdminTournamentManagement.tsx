@@ -391,15 +391,25 @@ const AdminTournamentManagement: React.FC = () => {
       if (!tSnap.exists()) throw new Error('Tournament not found.');
       const tourney = tSnap.val();
 
+      // Live DB check — prevents double-refund even if local state was stale
+      if (tourney.status === 'refunded' || tourney.status === 'cancelled') {
+        throw new Error(`This match has already been cancelled/refunded.`);
+      }
+
       const registered = tourney.registeredPlayers || {};
       const regUids = Object.keys(registered);
+      const results = tourney.fullResults || [];
 
       if (regUids.length === 0) {
         throw new Error('No players found in this match.');
       }
 
-      // Fetch latest profile documents
-      const promises = regUids.map(uid => get(ref(db, `users/${uid}`)));
+      // Fetch latest profile documents for both registered players AND results recipients
+      const allUidsToFetch = new Set<string>([
+        ...regUids,
+        ...results.map((r: any) => r.uid).filter(Boolean)
+      ]);
+      const promises = Array.from(allUidsToFetch).map(uid => get(ref(db, `users/${uid}`)));
       const snaps = await Promise.all(promises);
       const freshUserMap: Record<string, any> = {};
       snaps.forEach(s => {
@@ -441,7 +451,6 @@ const AdminTournamentManagement: React.FC = () => {
       });
 
       // 2. Deduct winnings (if winnings were already credited)
-      const results = tourney.fullResults || [];
       results.forEach((res: any) => {
         const user = freshUserMap[res.uid];
         if (!user || !res.winnings || res.winnings <= 0) return;
