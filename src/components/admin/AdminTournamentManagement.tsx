@@ -13,6 +13,8 @@ interface Tournament {
   prizeDistribution?: Record<string, number>;
   registeredPlayers?: Record<string, any>;
   fullResults?: any[];
+  maxKillsPlayers?: number | string;
+  minKills?: number;
 }
 
 interface PlayerRow {
@@ -51,6 +53,15 @@ const AdminTournamentManagement: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [msg, setMsg] = useState<{ text: string; type: 'success' | 'danger' | 'info' } | null>(null);
 
+  const [activeFilterTab, setActiveFilterTab] = useState<'pending' | 'completed'>('pending');
+  const [maxKillsPlayers, setMaxKillsPlayers] = useState<string>('All');
+  const [minKills, setMinKills] = useState<number>(0);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  const isLocked = selectedTourney?.winningsCredited || 
+    selectedTourney?.status === 'refunded' || 
+    selectedTourney?.status === 'cancelled';
+
   useEffect(() => {
     const fetchTourneys = async () => {
       try {
@@ -86,6 +97,8 @@ const AdminTournamentManagement: React.FC = () => {
       if (!tSnap.exists()) throw new Error('Tournament not found.');
       const t = { id, ...tSnap.val() } as Tournament;
       setSelectedTourney(t);
+      setMaxKillsPlayers(t.maxKillsPlayers !== undefined ? String(t.maxKillsPlayers) : 'All');
+      setMinKills(t.minKills !== undefined ? Number(t.minKills) : 0);
 
       const registered = t.registeredPlayers || {};
       const uids = Object.keys(registered);
@@ -207,10 +220,25 @@ const AdminTournamentManagement: React.FC = () => {
   const calculateRowWinnings = (p: PlayerRow): number => {
     if (!selectedTourney) return 0;
     const perKill = selectedTourney.perKillPrize || 0;
-    const killsAmt = p.kills * perKill;
+    
+    // Check eligibility
+    let qualifiesForKills = true;
+    const rankNum = parseInt(p.rank);
+    
+    if (maxKillsPlayers !== 'All') {
+      const maxRankVal = parseInt(maxKillsPlayers);
+      if (isNaN(rankNum) || rankNum > maxRankVal) {
+        qualifiesForKills = false;
+      }
+    }
+    
+    if (p.kills < minKills) {
+      qualifiesForKills = false;
+    }
+
+    const killsAmt = qualifiesForKills ? (p.kills * perKill) : 0;
     
     let rankAmt = 0;
-    const rankNum = parseInt(p.rank);
     const dist = selectedTourney.prizeDistribution || {};
     
     if (!isNaN(rankNum) && rankNum > 0) {
@@ -234,6 +262,53 @@ const AdminTournamentManagement: React.FC = () => {
     }
 
     return killsAmt + Number(p.extraAmount || 0) + rankAmt;
+  };
+
+  const handleSortByKills = () => {
+    if (isLocked) return;
+    const sorted = [...players].sort((a, b) => b.kills - a.kills);
+    setPlayers(sorted);
+  };
+
+  const handleAutoAssignRanks = () => {
+    if (isLocked) return;
+    setPlayers(prev => prev.map((p, idx) => ({
+      ...p,
+      rank: String(idx + 1)
+    })));
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    if (isLocked) return;
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index || isLocked) return;
+
+    const list = [...players];
+    const draggedItem = list[draggedIndex];
+    list.splice(draggedIndex, 1);
+    list.splice(index, 0, draggedItem);
+
+    // Auto-update ranks based on new order
+    const updated = list.map((p, idx) => ({
+      ...p,
+      rank: String(idx + 1)
+    }));
+
+    setPlayers(updated);
+    setDraggedIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
   };
 
   // Credit Winnings
@@ -354,6 +429,8 @@ const AdminTournamentManagement: React.FC = () => {
 
       updates[`tournaments/${selectedTourney.id}/winningsCredited`] = true;
       updates[`tournaments/${selectedTourney.id}/status`] = 'result';
+      updates[`tournaments/${selectedTourney.id}/maxKillsPlayers`] = maxKillsPlayers === 'All' ? 'All' : Number(maxKillsPlayers);
+      updates[`tournaments/${selectedTourney.id}/minKills`] = minKills;
       
       // Sort results by rank
       fullResults.sort((a, b) => (a.rank || 999) - (b.rank || 999));
@@ -370,7 +447,7 @@ const AdminTournamentManagement: React.FC = () => {
           actor: loggedInStaff?.id || auth.currentUser?.email || 'admin',
           actorType: loggedInStaff ? 'staff' : 'admin',
           event: 'credit_winnings',
-          description: `Credited ₹${totalCredited.toFixed(2)} to ${playersCount} players for match: ${selectedTourney.name}`,
+          description: `Credited winnings for match: ${selectedTourney.name}. Max Kills Players: ${maxKillsPlayers}, Min Kills: ${minKills}`,
           tournamentId: selectedTourney.id,
           amount: totalCredited,
           timestamp: Date.now()
@@ -523,13 +600,35 @@ const AdminTournamentManagement: React.FC = () => {
     }
   };
 
-  const isLocked = selectedTourney?.winningsCredited || 
-    selectedTourney?.status === 'refunded' || 
-    selectedTourney?.status === 'cancelled';
+  const pendingTourneys = tournaments.filter(t => !t.winningsCredited);
+  const completedTourneys = tournaments.filter(t => t.winningsCredited);
+  const visibleTourneys = activeFilterTab === 'pending' ? pendingTourneys : completedTourneys;
 
   return (
     <div className="admin-tourney-mgt-view">
       <h2 className="mb-4">Tournament Management</h2>
+
+      {/* Tabs */}
+      <ul className="nav nav-tabs mb-3 border-secondary border-opacity-25">
+        <li className="nav-item">
+          <button 
+            className={`nav-link text-white border-0 ${activeFilterTab === 'pending' ? 'active bg-warning text-dark fw-bold' : 'bg-transparent text-secondary'}`}
+            onClick={() => { setActiveFilterTab('pending'); setSelectedId(''); setSelectedTourney(null); setPlayers([]); }}
+            style={{ borderRadius: '8px 8px 0 0' }}
+          >
+            Pending Scores ({pendingTourneys.length})
+          </button>
+        </li>
+        <li className="nav-item">
+          <button 
+            className={`nav-link text-white border-0 ${activeFilterTab === 'completed' ? 'active bg-success text-white fw-bold' : 'bg-transparent text-secondary'}`}
+            onClick={() => { setActiveFilterTab('completed'); setSelectedId(''); setSelectedTourney(null); setPlayers([]); }}
+            style={{ borderRadius: '8px 8px 0 0' }}
+          >
+            Completed Matches ({completedTourneys.length})
+          </button>
+        </li>
+      </ul>
 
       {/* Selector Card */}
       <div className="card custom-card p-4 mb-4">
@@ -541,7 +640,7 @@ const AdminTournamentManagement: React.FC = () => {
             onChange={(e) => handleSelectTournament(e.target.value)}
           >
             <option value="">-- Choose Match --</option>
-            {tournaments.map(t => (
+            {visibleTourneys.map(t => (
               <option key={t.id} value={t.id}>
                 {t.name} (Status: {t.status})
               </option>
@@ -554,6 +653,27 @@ const AdminTournamentManagement: React.FC = () => {
 
       {selectedId && (
         <>
+          <style>{`
+            .drag-handle {
+              cursor: grab;
+              color: #64748B;
+              transition: color 0.15s;
+            }
+            .drag-handle:hover {
+              color: #FACC15;
+            }
+            .draggable-row {
+              transition: background-color 0.2s;
+            }
+            .draggable-row:hover {
+              background: rgba(255, 255, 255, 0.02) !important;
+            }
+            .draggable-row.dragging {
+              opacity: 0.4;
+              background: rgba(250, 204, 21, 0.1) !important;
+              border: 1px dashed #FACC15;
+            }
+          `}</style>
           {loading ? (
             <div className="placeholder-glow py-5 rounded-3" style={{ height: '200px' }}></div>
           ) : (
@@ -578,6 +698,51 @@ const AdminTournamentManagement: React.FC = () => {
                 </div>
               </div>
 
+              {/* Kill distribution settings */}
+              <div className="row g-3 mb-4 align-items-end text-start p-3 bg-black bg-opacity-20 rounded-3 border border-secondary border-opacity-10 mx-0">
+                <div className="col-12 col-md-3">
+                  <label className="form-label text-secondary small fw-bold mb-1">Max Players for Kill Winnings</label>
+                  <select 
+                    className="form-select bg-dark border-secondary border-opacity-25 text-white form-select-sm"
+                    value={maxKillsPlayers}
+                    onChange={(e) => setMaxKillsPlayers(e.target.value)}
+                    disabled={isLocked}
+                  >
+                    <option value="All">All Players</option>
+                    {Array.from({ length: 50 }, (_, i) => String(i + 1)).map(val => (
+                      <option key={val} value={val}>Top {val} Players</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-12 col-md-3">
+                  <label className="form-label text-secondary small fw-bold mb-1">Min Kills for Crediting</label>
+                  <input 
+                    type="number"
+                    className="form-control bg-dark border-secondary border-opacity-25 text-white form-control-sm"
+                    min="0"
+                    value={minKills}
+                    onChange={(e) => setMinKills(Math.max(0, parseInt(e.target.value) || 0))}
+                    disabled={isLocked}
+                  />
+                </div>
+                <div className="col-12 col-md-6 d-flex justify-content-md-end gap-2 flex-wrap mt-2 mt-md-0">
+                  <button 
+                    className="btn btn-outline-warning btn-sm"
+                    onClick={handleSortByKills}
+                    disabled={isLocked || players.length === 0}
+                  >
+                    <i className="bi bi-sort-numeric-down"></i> Sort by Kills
+                  </button>
+                  <button 
+                    className="btn btn-outline-info btn-sm"
+                    onClick={handleAutoAssignRanks}
+                    disabled={isLocked || players.length === 0}
+                  >
+                    <i className="bi bi-list-ol"></i> Auto Rank 1 to N
+                  </button>
+                </div>
+              </div>
+
               <div className="table-responsive">
                 <table className="table table-dark table-hover mb-0 align-middle">
                   <thead>
@@ -594,18 +759,38 @@ const AdminTournamentManagement: React.FC = () => {
                   </thead>
                   <tbody>
                     {players.length > 0 ? (
-                      players.map(p => {
+                      players.map((p, idx) => {
                         const hasTeammates = !!(p.teammateUsername || p.teammate2Username || p.teammate3Username);
                         const rows = [];
 
+                        const isCurrentlyDragging = draggedIndex === idx;
+
                         // 1. Leader Row
                         rows.push(
-                          <tr key={p.uid + '-leader'} style={{ borderBottom: hasTeammates ? 'none' : undefined }}>
-                            <td className="text-start">
-                              <div className="fw-bold text-white">{p.displayName}</div>
-                              <span style={{ fontSize: '0.62rem', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>
-                                LEADER
-                              </span>
+                          <tr 
+                            key={p.uid + '-leader'} 
+                            style={{ borderBottom: hasTeammates ? 'none' : undefined }}
+                            draggable={!isLocked}
+                            onDragStart={(e) => handleDragStart(e, idx)}
+                            onDragOver={(e) => handleDragOver(e)}
+                            onDrop={(e) => handleDrop(e, idx)}
+                            onDragEnd={handleDragEnd}
+                            className={`draggable-row ${isCurrentlyDragging ? 'dragging' : ''}`}
+                          >
+                            <td className="text-start d-flex align-items-center">
+                              {!isLocked && (
+                                <i 
+                                  className="bi bi-grip-vertical drag-handle me-2 fs-5"
+                                  style={{ cursor: 'grab' }}
+                                  title="Drag to reorder/change rank"
+                                ></i>
+                              )}
+                              <div>
+                                <div className="fw-bold text-white">{p.displayName}</div>
+                                <span style={{ fontSize: '0.62rem', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>
+                                  LEADER
+                                </span>
+                              </div>
                             </td>
                             <td className="text-start">
                               <div className="text-accent small fw-semibold">{p.username}</div>
@@ -648,7 +833,35 @@ const AdminTournamentManagement: React.FC = () => {
                               />
                             </td>
                             <td className="text-end text-accent fw-bold fs-5">
-                              ₹{calculateRowWinnings(p).toFixed(2)}
+                              <div>₹{calculateRowWinnings(p).toFixed(2)}</div>
+                              {(() => {
+                                const rankNum = parseInt(p.rank);
+                                const perKill = selectedTourney?.perKillPrize || 0;
+                                if (perKill > 0 && p.kills > 0) {
+                                  const listInfo = [];
+                                  if (maxKillsPlayers !== 'All' && (isNaN(rankNum) || rankNum > parseInt(maxKillsPlayers))) {
+                                    listInfo.push(`Exceeds Top ${maxKillsPlayers}`);
+                                  }
+                                  if (p.kills < minKills) {
+                                    listInfo.push(`Kills < ${minKills}`);
+                                  }
+                                  if (listInfo.length > 0) {
+                                    return (
+                                      <div className="text-danger" style={{ fontSize: '0.62rem', fontWeight: 'bold' }}>
+                                        <i className="bi bi-info-circle me-1"></i>
+                                        No Kills Reward ({listInfo.join(', ')})
+                                      </div>
+                                    );
+                                  } else {
+                                    return (
+                                      <div className="text-success" style={{ fontSize: '0.62rem' }}>
+                                        Kills: +₹{(p.kills * perKill).toFixed(2)}
+                                      </div>
+                                    );
+                                  }
+                                }
+                                return null;
+                              })()}
                             </td>
                           </tr>
                         );
