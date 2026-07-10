@@ -421,7 +421,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
     const isDuo = selectedTourney.mode === 'Duo';
     const isSquad = selectedTourney.mode === 'Squad';
     
-    let totalFee = isDuo ? fee * 2 : isSquad ? fee * 4 : fee;
+    let totalFee = fee;
     if (appliedCoupon) {
       totalFee = Math.max(0, totalFee - appliedCoupon.discount);
     }
@@ -1633,7 +1633,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                 <strong style={{ fontSize: '1rem', color: '#FACC15' }}>
                   ₹{(() => {
                     const fee = selectedTourney.entryFee;
-                    const baseFee = selectedTourney.mode === 'Duo' ? fee * 2 : fee;
+                    const baseFee = fee;
                     return appliedCoupon ? Math.max(0, baseFee - appliedCoupon.discount).toFixed(0) : baseFee.toFixed(0);
                   })()}
                 </strong>
