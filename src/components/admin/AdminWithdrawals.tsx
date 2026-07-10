@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ref, get, update, runTransaction, push, serverTimestamp } from 'firebase/database';
-import { db } from '../../firebase';
+import { db, auth } from '../../firebase';
 
 interface Withdrawal {
   id: string;
@@ -147,8 +147,27 @@ const AdminWithdrawals: React.FC = () => {
         };
 
         await update(ref(db), updates);
-        alert('Request rejected. Funds returned to user.');
       }
+
+      // Write admin action log
+      const logRef = push(ref(db, 'adminLogs'));
+      const loggedInStaffStr = sessionStorage.getItem('loggedInStaff');
+      const loggedInStaff = loggedInStaffStr ? JSON.parse(loggedInStaffStr) : null;
+      await update(ref(db), {
+        [`adminLogs/${logRef.key!}`]: {
+          actor: loggedInStaff?.id || auth.currentUser?.email || 'admin',
+          actorType: loggedInStaff ? 'staff' : 'admin',
+          event: actionType === 'approve' ? 'approve_withdrawal' : 'reject_withdrawal',
+          description: actionType === 'approve'
+            ? `Approved withdrawal of ₹${selectedReq.amount} for ${selectedReq.userName}. Ref: ${noteText.trim()}`
+            : `Rejected withdrawal of ₹${selectedReq.amount} for ${selectedReq.userName}. Reason: ${noteText.trim()}`,
+          targetUser: selectedReq.userId,
+          amount: selectedReq.amount,
+          timestamp: Date.now()
+        }
+      }).catch(() => {});
+
+      alert(actionType === 'approve' ? 'Request approved successfully.' : 'Request rejected. Funds returned to user.');
 
       setShowModal(false);
       fetchWithdrawals();

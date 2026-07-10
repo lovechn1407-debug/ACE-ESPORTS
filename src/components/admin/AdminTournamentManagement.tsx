@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ref, get, update, push, serverTimestamp } from 'firebase/database';
-import { db } from '../../firebase';
+import { db, auth } from '../../firebase';
 
 
 interface Tournament {
@@ -360,6 +360,23 @@ const AdminTournamentManagement: React.FC = () => {
       updates[`tournaments/${selectedTourney.id}/fullResults`] = fullResults;
 
       await update(ref(db), updates);
+
+      // Write admin action log
+      const logRef = push(ref(db, 'adminLogs'));
+      const loggedInStaffStr = sessionStorage.getItem('loggedInStaff');
+      const loggedInStaff = loggedInStaffStr ? JSON.parse(loggedInStaffStr) : null;
+      await update(ref(db), {
+        [`adminLogs/${logRef.key}`]: {
+          actor: loggedInStaff?.id || auth.currentUser?.email || 'admin',
+          actorType: loggedInStaff ? 'staff' : 'admin',
+          event: 'credit_winnings',
+          description: `Credited ₹${totalCredited.toFixed(2)} to ${playersCount} players for match: ${selectedTourney.name}`,
+          tournamentId: selectedTourney.id,
+          amount: totalCredited,
+          timestamp: Date.now()
+        }
+      }).catch(() => {});
+
       alert(`Winnings credited! ₹${totalCredited.toFixed(2)} split among ${playersCount} players.`);
       
       // Reload UI
@@ -479,6 +496,23 @@ const AdminTournamentManagement: React.FC = () => {
       updates[`tournaments/${selectedTourney.id}/status`] = 'refunded';
 
       await update(ref(db), updates);
+
+      // Write admin action log
+      const logRefRefund = push(ref(db, 'adminLogs'));
+      const loggedInStaffStrRef = sessionStorage.getItem('loggedInStaff');
+      const loggedInStaffRef = loggedInStaffStrRef ? JSON.parse(loggedInStaffStrRef) : null;
+      await update(ref(db), {
+        [`adminLogs/${logRefRefund.key}`]: {
+          actor: loggedInStaffRef?.id || auth.currentUser?.email || 'admin',
+          actorType: loggedInStaffRef ? 'staff' : 'admin',
+          event: 'refund_match',
+          description: `Refunded match and reversed winnings for: ${selectedTourney.name}`,
+          tournamentId: selectedTourney.id,
+          critical: true,
+          timestamp: Date.now()
+        }
+      }).catch(() => {});
+
       alert('Match cancelled and refunded successfully.');
       handleSelectTournament(selectedTourney.id);
     } catch (err: any) {

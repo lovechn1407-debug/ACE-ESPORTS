@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { ref, onValue, get, set, push } from 'firebase/database';
 import { auth, db } from '../../firebase';
@@ -21,6 +21,7 @@ import AdminReports from './AdminReports';
 import AdminBadges from './AdminBadges';
 import AdminEarningZone from './AdminEarningZone';
 import AdminStaffs from './AdminStaffs';
+import AdminLogs from './AdminLogs';
 
 type AdminTab = 
   | 'dashboard'
@@ -40,7 +41,8 @@ type AdminTab =
   | 'reports'
   | 'theme'
   | 'settings'
-  | 'staffs';
+  | 'staffs'
+  | 'logs';
 
 const AdminLayout: React.FC = () => {
   const { org } = useParams<{ org: string }>();
@@ -56,6 +58,10 @@ const AdminLayout: React.FC = () => {
     : 'dashboard';
   const [activeTab, setActiveTab] = useState<AdminTab>(defaultTab as AdminTab);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Badge counts for menu items
+  const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
+  const loginLoggedRef = useRef(false);
 
   // Support Chat Modal state
   const [showSupportChat, setShowSupportChat] = useState(false);
@@ -80,6 +86,79 @@ const AdminLayout: React.FC = () => {
         setSupportSettings(snap.val());
       }
     });
+  }, []);
+
+  // Write login log once per session
+  useEffect(() => {
+    if (loginLoggedRef.current) return;
+    loginLoggedRef.current = true;
+
+    const actor = isStaff ? loggedInStaff.id : (auth.currentUser?.email || 'admin');
+    const actorType = isStaff ? 'staff' : 'admin';
+    const logRef = push(ref(db, 'adminLoginLogs'));
+    set(logRef, {
+      actor,
+      actorType,
+      event: 'login',
+      timestamp: Date.now(),
+      userAgent: navigator.userAgent.slice(0, 200)
+    }).catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Real-time badge count listeners
+  useEffect(() => {
+    const unsubs: (() => void)[] = [];
+
+    // Pending withdrawals
+    unsubs.push(onValue(ref(db, 'withdrawals'), snap => {
+      let count = 0;
+      if (snap.exists()) {
+        snap.forEach(c => { if (c.val()?.status === 'pending') count++; });
+      }
+      setBadgeCounts(prev => ({ ...prev, withdrawals: count }));
+    }));
+
+    // Pending deposits
+    unsubs.push(onValue(ref(db, 'deposits'), snap => {
+      let count = 0;
+      if (snap.exists()) {
+        snap.forEach(c => { if (c.val()?.status === 'pending') count++; });
+      }
+      setBadgeCounts(prev => ({ ...prev, deposits: count }));
+    }));
+
+    // Open reports
+    unsubs.push(onValue(ref(db, 'reports'), snap => {
+      let count = 0;
+      if (snap.exists()) {
+        snap.forEach(tSnap => {
+          tSnap.forEach(accused => {
+            if ((accused.val()?.status || 'open') === 'open') count++;
+          });
+        });
+      }
+      setBadgeCounts(prev => ({ ...prev, reports: count }));
+    }));
+
+    // Pending earning zone claims
+    unsubs.push(onValue(ref(db, 'earningZoneClaims'), snap => {
+      let count = 0;
+      if (snap.exists()) {
+        snap.forEach(c => { if (c.val()?.status === 'pending') count++; });
+      }
+      setBadgeCounts(prev => ({ ...prev, earningZone: count }));
+    }));
+
+    // Live matches count
+    unsubs.push(onValue(ref(db, 'tournaments'), snap => {
+      let count = 0;
+      if (snap.exists()) {
+        snap.forEach(c => { if (c.val()?.status === 'live') count++; });
+      }
+      setBadgeCounts(prev => ({ ...prev, tournaments: count }));
+    }));
+
+    return () => unsubs.forEach(u => u());
   }, []);
 
   useEffect(() => {
@@ -318,7 +397,8 @@ const AdminLayout: React.FC = () => {
     { id: 'reports', label: 'Match Disputes', icon: 'bi-exclamation-triangle-fill' },
     { id: 'theme', label: 'Live Theme Editor', icon: 'bi-palette-fill' },
     { id: 'settings', label: 'Global Configs', icon: 'bi-gear-fill' },
-    { id: 'staffs', label: 'Manage Staffs', icon: 'bi-person-badge-fill' }
+    { id: 'staffs', label: 'Manage Staffs', icon: 'bi-person-badge-fill' },
+    { id: 'logs', label: 'Audit Logs', icon: 'bi-clipboard2-data-fill' }
   ];
 
   const navItems = isStaff 
@@ -374,6 +454,7 @@ const AdminLayout: React.FC = () => {
         <nav className="flex-grow-1 p-2 overflow-y-auto d-flex flex-column gap-1">
           {navItems.map(item => {
             const isLocked = isSubExpired && !unlockedTabs.includes(item.id) && item.id !== 'tournaments';
+            const badgeCount = badgeCounts[item.id] || 0;
             return (
               <button
                 key={item.id}
@@ -394,9 +475,24 @@ const AdminLayout: React.FC = () => {
               >
                 <i className={`bi ${item.icon}`}></i>
                 <span style={{ fontSize: '0.9rem' }}>{item.label}</span>
-                {isLocked && (
+                {isLocked ? (
                   <i className="bi bi-lock-fill ms-auto text-danger" style={{ fontSize: '0.85rem' }}></i>
-                )}
+                ) : badgeCount > 0 ? (
+                  <span
+                    className="ms-auto badge rounded-pill"
+                    style={{
+                      background: '#EF4444',
+                      color: '#fff',
+                      fontSize: '0.6rem',
+                      padding: '3px 7px',
+                      fontWeight: 800,
+                      minWidth: '20px',
+                      animation: 'badge-pulse 2s infinite'
+                    }}
+                  >
+                    {badgeCount > 99 ? '99+' : badgeCount}
+                  </span>
+                ) : null}
               </button>
             );
           })}
@@ -614,6 +710,12 @@ const AdminLayout: React.FC = () => {
 
         {/* Inner Panels Render */}
         <main className="flex-grow-1 p-4 overflow-y-auto" style={{ background: '#0F172A' }}>
+          <style>{`
+            @keyframes badge-pulse {
+              0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
+              50% { box-shadow: 0 0 0 4px rgba(239,68,68,0); }
+            }
+          `}</style>
           {activeTab === 'dashboard' && <AdminDashboard />}
           {activeTab === 'games' && <AdminGames />}
           {activeTab === 'promotions' && <AdminPromotions />}
@@ -632,6 +734,7 @@ const AdminLayout: React.FC = () => {
           {activeTab === 'theme' && <AdminTheme />}
           {activeTab === 'settings' && <AdminSettings />}
           {activeTab === 'staffs' && <AdminStaffs />}
+          {activeTab === 'logs' && <AdminLogs />}
         </main>
       </div>
 

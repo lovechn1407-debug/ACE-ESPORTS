@@ -238,6 +238,17 @@ const AdminAuth: React.FC = () => {
         accessibleMenus: staffData.accessibleMenus || []
       }));
 
+      // Write login log
+      const { push: pushLog, ref: refLog, set: setLog } = await import('firebase/database');
+      const logRef = pushLog(refLog(db, 'adminLoginLogs'));
+      setLog(logRef, {
+        actor: staffData.id,
+        actorType: 'staff',
+        event: 'login',
+        timestamp: Date.now(),
+        userAgent: navigator.userAgent.slice(0, 200)
+      }).catch(() => {});
+
       alert('Staff logged in successfully! Redirecting...');
       window.location.reload();
     } catch (err: any) {

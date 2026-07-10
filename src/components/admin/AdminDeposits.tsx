@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ref, get, update, runTransaction, push, serverTimestamp } from 'firebase/database';
-import { db } from '../../firebase';
+import { db, auth } from '../../firebase';
 
 
 interface Deposit {
@@ -114,6 +114,22 @@ const AdminDeposits: React.FC = () => {
 
       await update(ref(db), updates);
 
+      // Write admin action log
+      const logRef = push(ref(db, 'adminLogs'));
+      const loggedInStaffStr = sessionStorage.getItem('loggedInStaff');
+      const loggedInStaff = loggedInStaffStr ? JSON.parse(loggedInStaffStr) : null;
+      await update(ref(db), {
+        [logRef.key!]: {
+          actor: loggedInStaff?.id || auth.currentUser?.email || 'admin',
+          actorType: loggedInStaff ? 'staff' : 'admin',
+          event: 'approve_deposit',
+          description: `Approved deposit of ₹${dep.amount} for ${dep.userName} (UTR: ${dep.utr})`,
+          targetUser: dep.userId,
+          amount: dep.amount,
+          timestamp: Date.now()
+        }
+      }).catch(() => {});
+
       alert('Recharge approved and credited successfully.');
       fetchDeposits();
     } catch (err: any) {
@@ -172,6 +188,22 @@ const AdminDeposits: React.FC = () => {
       };
 
       await update(ref(db), updates);
+
+      // Write admin action log
+      const logRefRej = push(ref(db, 'adminLogs'));
+      const loggedInStaffStrR = sessionStorage.getItem('loggedInStaff');
+      const loggedInStaffR = loggedInStaffStrR ? JSON.parse(loggedInStaffStrR) : null;
+      await update(ref(db), {
+        [logRefRej.key!]: {
+          actor: loggedInStaffR?.id || auth.currentUser?.email || 'admin',
+          actorType: loggedInStaffR ? 'staff' : 'admin',
+          event: 'reject_deposit',
+          description: `Rejected deposit of ₹${selectedReq.amount} for ${selectedReq.userName} (UTR: ${selectedReq.utr}). Reason: ${rejectReasonText.trim()}`,
+          targetUser: selectedReq.userId,
+          amount: selectedReq.amount,
+          timestamp: Date.now()
+        }
+      }).catch(() => {});
 
       alert('Request rejected successfully.');
       setShowRejectModal(false);

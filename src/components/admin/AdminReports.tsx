@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ref, get, update, push, serverTimestamp } from 'firebase/database';
-import { db } from '../../firebase';
+import { db, auth } from '../../firebase';
 
 const hexToRgbStr = (hex: string): string => {
   const clean = (hex || '#FFFFFF').replace('#', '');
@@ -315,6 +315,22 @@ const AdminReports: React.FC = () => {
 
       // 7. Push all updates atomically
       await update(ref(db), updates);
+
+      // Write admin action log
+      const logRef = push(ref(db, 'adminLogs'));
+      const loggedInStaffStr = sessionStorage.getItem('loggedInStaff');
+      const loggedInStaff = loggedInStaffStr ? JSON.parse(loggedInStaffStr) : null;
+      await update(ref(db), {
+        [`adminLogs/${logRef.key}`]: {
+          actor: loggedInStaff?.id || auth.currentUser?.email || 'admin',
+          actorType: loggedInStaff ? 'staff' : 'admin',
+          event: 'refund_dispute',
+          description: `Refunded match and reversed winnings for tournament ${selectedGroup.tournamentId} (accused: ${accusedUid})`,
+          tournamentId: selectedGroup.tournamentId,
+          critical: true,
+          timestamp: Date.now()
+        }
+      }).catch(() => {});
 
       alert('Refund and winnings rollback completed successfully.');
       fetchReports();
