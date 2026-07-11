@@ -24,6 +24,9 @@ interface ResultEntry {
   leaderKills?: number;
   teammates?: { username: string; gameUid: string; kills: number }[];
   winnings: number;
+  blacklisted?: boolean;
+  blacklistReason?: string;
+  unfairBonus?: number;
 }
 
 /** Convert "#RRGGBB" → "R, G, B" for CSS rgba() */
@@ -122,6 +125,11 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
             <div style={{ fontSize: '0.68rem', color: '#475569', marginTop: '1px' }}>
               <i className="bi bi-bar-chart-line-fill me-1" style={{ color: '#334155' }}></i>
               Match Results · {results.length} players
+              {results.some(r => r.blacklisted) && (
+                <span style={{ marginLeft: '8px', fontSize: '0.6rem', background: 'rgba(239,68,68,0.15)', color: '#F87171', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, border: '1px solid rgba(239,68,68,0.3)' }}>
+                  ⛔ DISQUALIFICATIONS ACTIVE
+                </span>
+              )}
             </div>
           </div>
           <button onClick={onClose} style={{
@@ -182,6 +190,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                 const avatarUrl = player.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(player.displayName)}&background=1E293B&color=E2E8F0&bold=true&size=36`;
                 const teammates = player.teammates || [];
                 const isTeamMode = mode === 'Duo' || mode === 'Squad';
+                const isBlacklisted = !!player.blacklisted;
 
                 if (isTeamMode && teammates.length > 0) {
                   return (
@@ -190,10 +199,11 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       style={{
                         borderRadius: '8px',
                         overflow: 'hidden',
-                        border: '1px solid rgba(124, 58, 237, 0.15)',
-                        background: 'rgba(15, 21, 38, 0.5)',
+                        border: isBlacklisted ? '1.5px dashed rgba(239,68,68,0.4)' : '1px solid rgba(124, 58, 237, 0.15)',
+                        background: isBlacklisted ? 'rgba(239,68,68,0.04)' : 'rgba(15, 21, 38, 0.5)',
                         display: 'flex',
                         flexDirection: 'column',
+                        opacity: isBlacklisted ? 0.55 : 1,
                       }}
                     >
                       {/* Leader Row */}
@@ -251,7 +261,11 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                             {player.displayName}
                             <span style={{ marginLeft: '4px', fontSize: '0.58rem', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>LDR</span>
                             {isMe && <span style={{ marginLeft: '4px', fontSize: '0.58rem', background: 'rgba(250,204,21,0.15)', color: '#FACC15', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>YOU</span>}
+                            {isBlacklisted && <span style={{ marginLeft: '4px', fontSize: '0.56rem', background: 'rgba(239,68,68,0.2)', color: '#F87171', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, border: '1px solid rgba(239,68,68,0.35)' }}>⛔ BLACKLISTED</span>}
                           </div>
+                          {isBlacklisted && player.blacklistReason && (
+                            <div style={{ fontSize: '0.58rem', color: '#F87171', opacity: 0.7, marginTop: '1px', fontStyle: 'italic' }}>Reason: {player.blacklistReason}</div>
+                          )}
                           {player.inGameUsername && (
                             <div style={{ fontSize: '0.62rem', color: '#94A3B8', marginTop: '1px' }}>{player.inGameUsername}</div>
                           )}
@@ -271,10 +285,19 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
 
                         {/* Winnings */}
                         <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '54px' }}>
-                          <div style={{ fontSize: '0.55rem', color: '#4ADE80', marginBottom: '1px' }}>Earned</div>
-                          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#4ADE80' }}>
-                            {(player.winnings || 0) > 0 ? `₹${player.winnings.toFixed(0)}` : '—'}
-                          </div>
+                          {isBlacklisted ? (
+                            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#F87171' }}>₹0</div>
+                          ) : (
+                            <>
+                              <div style={{ fontSize: '0.55rem', color: '#4ADE80', marginBottom: '1px' }}>Earned</div>
+                              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#4ADE80' }}>
+                                {(player.winnings || 0) > 0 ? `₹${player.winnings.toFixed(0)}` : '—'}
+                              </div>
+                              {(player.unfairBonus || 0) > 0 && (
+                                <div style={{ fontSize: '0.55rem', color: '#FB923C', marginTop: '1px' }}>+₹{player.unfairBonus!.toFixed(0)} Unfair Bonus</div>
+                              )}
+                            </>
+                          )}
                         </div>
                       </div>
 
@@ -325,9 +348,10 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       display: 'flex', alignItems: 'center', gap: '10px',
                       padding: '9px 12px',
                       borderRadius: '0px',
-                      border: 'none',
-                      background: 'url(/images/match_results_item_bg.webp) no-repeat center center',
+                      border: isBlacklisted ? '1.5px dashed rgba(239,68,68,0.35)' : 'none',
+                      background: isBlacklisted ? 'rgba(239,68,68,0.04)' : 'url(/images/match_results_item_bg.webp) no-repeat center center',
                       backgroundSize: 'cover',
+                      opacity: isBlacklisted ? 0.5 : 1,
                     }}
                   >
                     {/* Rank number */}
@@ -374,7 +398,11 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       }}>
                         {player.displayName}
                         {isMe && <span style={{ marginLeft: '6px', fontSize: '0.6rem', background: 'rgba(250,204,21,0.15)', color: '#FACC15', padding: '1px 5px', borderRadius: '3px', fontWeight: 600, letterSpacing: '0.04em' }}>YOU</span>}
+                        {isBlacklisted && <span style={{ marginLeft: '5px', fontSize: '0.56rem', background: 'rgba(239,68,68,0.2)', color: '#F87171', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, border: '1px solid rgba(239,68,68,0.35)' }}>⛔ BLACKLISTED</span>}
                       </div>
+                      {isBlacklisted && player.blacklistReason && (
+                        <div style={{ fontSize: '0.58rem', color: '#F87171', opacity: 0.7, marginTop: '1px', fontStyle: 'italic' }}>Reason: {player.blacklistReason}</div>
+                      )}
                       {player.inGameUsername && (
                         <div style={{ fontSize: '0.62rem', color: '#94A3B8', marginTop: '1px' }}>{player.inGameUsername}</div>
                       )}
@@ -388,10 +416,19 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
 
                     {/* Winnings */}
                     <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '54px' }}>
-                      <div style={{ fontSize: '0.62rem', color: '#FFFFFF', marginBottom: '1px', opacity: 0.8 }}>Earned</div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#FFFFFF' }}>
-                        {(player.winnings || 0) > 0 ? `₹${player.winnings.toFixed(0)}` : '—'}
-                      </div>
+                      {isBlacklisted ? (
+                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#F87171' }}>₹0</div>
+                      ) : (
+                        <>
+                          <div style={{ fontSize: '0.62rem', color: '#FFFFFF', marginBottom: '1px', opacity: 0.8 }}>Earned</div>
+                          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#FFFFFF' }}>
+                            {(player.winnings || 0) > 0 ? `₹${player.winnings.toFixed(0)}` : '—'}
+                          </div>
+                          {(player.unfairBonus || 0) > 0 && (
+                            <div style={{ fontSize: '0.55rem', color: '#FB923C', marginTop: '1px' }}>+₹{player.unfairBonus!.toFixed(0)} Unfair Bonus</div>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 );
