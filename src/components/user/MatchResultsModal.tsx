@@ -214,7 +214,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                           padding: '9px 12px',
                           position: 'relative',
                           backgroundImage: isBlacklisted ? 'none' : `url('/images/match_results_item_bg.webp')`,
-                          backgroundSize: 'cover',
+                          backgroundSize: '115% 100%',
                           backgroundPosition: 'center',
                           backgroundRepeat: 'no-repeat',
                           borderBottom: '1px solid rgba(124, 58, 237, 0.12)',
@@ -225,7 +225,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                           <div style={{
                             position: 'absolute', inset: 0,
                             backgroundImage: `url('/images/match_results_item_bg.webp')`,
-                            backgroundSize: 'cover',
+                            backgroundSize: '115% 100%',
                             backgroundPosition: 'center',
                             backgroundRepeat: 'no-repeat',
                             filter: 'hue-rotate(110deg) saturate(2.5) brightness(0.9)',
@@ -277,7 +277,6 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                             {player.displayName}
                             {!isBlacklisted && <span style={{ marginLeft: '4px', fontSize: '0.58rem', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>LDR</span>}
                             {isMe && !isBlacklisted && <span style={{ marginLeft: '4px', fontSize: '0.58rem', background: 'rgba(250,204,21,0.15)', color: '#FACC15', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>YOU</span>}
-                            {isBlacklisted && <span style={{ marginLeft: '4px', fontSize: '0.58rem', background: 'rgba(239,68,68,0.3)', color: '#FEE2E2', padding: '1px 5px', borderRadius: '3px', fontWeight: 800, letterSpacing: '0.04em' }}>⛔ DISQUALIFIED</span>}
                           </div>
                           {player.inGameUsername && (
                             <div style={{ fontSize: '0.62rem', color: isBlacklisted ? '#FCA5A5' : '#94A3B8', marginTop: '1px', opacity: isBlacklisted ? 0.7 : 1 }}>{player.inGameUsername}</div>
@@ -387,7 +386,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       padding: '9px 12px',
                       position: 'relative',
                       backgroundImage: isBlacklisted ? 'none' : 'url(/images/match_results_item_bg.webp)',
-                      backgroundSize: 'cover',
+                      backgroundSize: '115% 100%',
                       backgroundPosition: 'center',
                       backgroundRepeat: 'no-repeat',
                     }}
@@ -397,7 +396,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       <div style={{
                         position: 'absolute', inset: 0,
                         backgroundImage: 'url(/images/match_results_item_bg.webp)',
-                        backgroundSize: 'cover',
+                        backgroundSize: '115% 100%',
                         backgroundPosition: 'center',
                         backgroundRepeat: 'no-repeat',
                         filter: 'hue-rotate(110deg) saturate(2.5) brightness(0.9)',
@@ -449,7 +448,6 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       }}>
                         {player.displayName}
                         {isMe && !isBlacklisted && <span style={{ marginLeft: '6px', fontSize: '0.6rem', background: 'rgba(250,204,21,0.15)', color: '#FACC15', padding: '1px 5px', borderRadius: '3px', fontWeight: 600, letterSpacing: '0.04em' }}>YOU</span>}
-                        {isBlacklisted && <span style={{ marginLeft: '5px', fontSize: '0.58rem', background: 'rgba(239,68,68,0.3)', color: '#FEE2E2', padding: '1px 5px', borderRadius: '3px', fontWeight: 800, letterSpacing: '0.04em' }}>⛔ DISQUALIFIED</span>}
                       </div>
                       {player.inGameUsername && (
                         <div style={{ fontSize: '0.62rem', color: isBlacklisted ? '#FCA5A5' : '#94A3B8', marginTop: '1px', opacity: isBlacklisted ? 0.7 : 1 }}>{player.inGameUsername}</div>
