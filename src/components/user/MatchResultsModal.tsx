@@ -197,7 +197,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                     <div
                       key={player.uid + idx}
                       style={{
-                        borderRadius: isBlacklisted ? '0px' : '8px',
+                        borderRadius: '0px',
                         overflow: 'hidden',
                         border: isBlacklisted ? '1.5px solid #EF4444' : '1px solid rgba(124, 58, 237, 0.15)',
                         background: isBlacklisted ? 'rgba(15, 21, 38, 0.5)' : 'rgba(15, 21, 38, 0.5)',
