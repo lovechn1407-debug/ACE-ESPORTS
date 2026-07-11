@@ -214,19 +214,21 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                           padding: '9px 12px',
                           position: 'relative',
                           backgroundImage: isBlacklisted ? 'none' : `url('/images/match_results_item_bg.webp')`,
-                          backgroundSize: '100% 100%',
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
                           backgroundRepeat: 'no-repeat',
                           borderBottom: '1px solid rgba(124, 58, 237, 0.12)',
                         }}
                       >
-                        {/* Hue-rotated red bg for blacklisted: purple(270°) + hue-rotate(90°) = red(360°) */}
+                        {/* Hue-rotated red bg for blacklisted: purple(270°) + hue-rotate(110°) = red(360°/0°) */}
                         {isBlacklisted && (
                           <div style={{
                             position: 'absolute', inset: 0,
                             backgroundImage: `url('/images/match_results_item_bg.webp')`,
-                            backgroundSize: '100% 100%',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
                             backgroundRepeat: 'no-repeat',
-                            filter: 'hue-rotate(90deg) saturate(2) brightness(0.8)',
+                            filter: 'hue-rotate(110deg) saturate(2.5) brightness(0.9)',
                             pointerEvents: 'none',
                             zIndex: 0,
                           }} />
@@ -385,18 +387,20 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       padding: '9px 12px',
                       position: 'relative',
                       backgroundImage: isBlacklisted ? 'none' : 'url(/images/match_results_item_bg.webp)',
-                      backgroundSize: '100% 100%',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
                       backgroundRepeat: 'no-repeat',
                     }}
                   >
-                    {/* Hue-rotated red bg for blacklisted: purple(270°) + hue-rotate(90°) = red(360°) */}
+                    {/* Hue-rotated red bg for blacklisted: purple(270°) + hue-rotate(110°) = red(360°/0°) */}
                     {isBlacklisted && (
                       <div style={{
                         position: 'absolute', inset: 0,
                         backgroundImage: 'url(/images/match_results_item_bg.webp)',
-                        backgroundSize: '100% 100%',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
                         backgroundRepeat: 'no-repeat',
-                        filter: 'hue-rotate(90deg) saturate(2) brightness(0.8)',
+                        filter: 'hue-rotate(110deg) saturate(2.5) brightness(0.9)',
                         pointerEvents: 'none',
                         zIndex: 0,
                       }} />
