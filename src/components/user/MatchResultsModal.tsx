@@ -214,7 +214,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                           padding: '9px 12px',
                           position: 'relative',
                           backgroundImage: isBlacklisted ? 'none' : `url('/images/match_results_item_bg.webp')`,
-                          backgroundSize: '115% 100%',
+                          backgroundSize: '125% 175%',
                           backgroundPosition: 'center',
                           backgroundRepeat: 'no-repeat',
                           borderBottom: '1px solid rgba(124, 58, 237, 0.12)',
@@ -225,7 +225,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                           <div style={{
                             position: 'absolute', inset: 0,
                             backgroundImage: `url('/images/match_results_item_bg.webp')`,
-                            backgroundSize: '115% 100%',
+                            backgroundSize: '125% 175%',
                             backgroundPosition: 'center',
                             backgroundRepeat: 'no-repeat',
                             filter: 'hue-rotate(110deg) saturate(2.5) brightness(0.9)',
@@ -386,7 +386,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       padding: '9px 12px',
                       position: 'relative',
                       backgroundImage: isBlacklisted ? 'none' : 'url(/images/match_results_item_bg.webp)',
-                      backgroundSize: '115% 100%',
+                      backgroundSize: '125% 175%',
                       backgroundPosition: 'center',
                       backgroundRepeat: 'no-repeat',
                     }}
@@ -396,7 +396,7 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       <div style={{
                         position: 'absolute', inset: 0,
                         backgroundImage: 'url(/images/match_results_item_bg.webp)',
-                        backgroundSize: '115% 100%',
+                        backgroundSize: '125% 175%',
                         backgroundPosition: 'center',
                         backgroundRepeat: 'no-repeat',
                         filter: 'hue-rotate(110deg) saturate(2.5) brightness(0.9)',
