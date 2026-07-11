@@ -646,11 +646,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
           {tournaments.length > 0 ? (
             tournaments.map(t => {
               const regCount = t.registeredPlayers 
-                ? Object.values(t.registeredPlayers).reduce((acc: number, p: any) => {
-                    if (t.mode === 'Duo') return acc + (p.teammateUsername ? 2 : 1);
-                    if (t.mode === 'Squad') return acc + 1 + (p.teammateUsername ? 1 : 0) + (p.teammate2Username ? 1 : 0) + (p.teammate3Username ? 1 : 0);
-                    return acc + 1;
-                  }, 0)
+                ? Object.keys(t.registeredPlayers).length
                 : 0;
               const maxP = t.maxPlayers || 0;
               const spotsL = maxP > 0 ? Math.max(0, maxP - regCount) : Infinity;
@@ -1139,7 +1135,7 @@ const Tournaments: React.FC<TournamentsProps> = ({
                   Match Roster
                 </div>
                 <div style={{ fontSize: '0.7rem', color: '#64748B', marginTop: '1px' }}>
-                  Joined players: <span style={{ color: 'var(--accent-color)', fontWeight: 600 }}>{registeredPlayersList.reduce((acc, t) => acc + 1 + (t.teammates?.length || 0), 0)}</span> / {selectedTourney.maxPlayers || 100}
+                  Joined: <span style={{ color: 'var(--accent-color)', fontWeight: 600 }}>{registeredPlayersList.length}</span> / {selectedTourney.maxPlayers || 100}
                 </div>
               </div>
               <button

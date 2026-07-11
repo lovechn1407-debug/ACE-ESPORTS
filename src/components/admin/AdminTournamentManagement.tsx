@@ -836,31 +836,66 @@ const AdminTournamentManagement: React.FC = () => {
                               <div>₹{calculateRowWinnings(p).toFixed(2)}</div>
                               {(() => {
                                 const rankNum = parseInt(p.rank);
-                                const perKill = selectedTourney?.perKillPrize || 0;
-                                if (perKill > 0 && p.kills > 0) {
-                                  const listInfo = [];
-                                  if (maxKillsPlayers !== 'All' && (isNaN(rankNum) || rankNum > parseInt(maxKillsPlayers))) {
-                                    listInfo.push(`Exceeds Top ${maxKillsPlayers}`);
-                                  }
-                                  if (p.kills < minKills) {
-                                    listInfo.push(`Kills < ${minKills}`);
-                                  }
-                                  if (listInfo.length > 0) {
-                                    return (
-                                      <div className="text-danger" style={{ fontSize: '0.62rem', fontWeight: 'bold' }}>
-                                        <i className="bi bi-info-circle me-1"></i>
-                                        No Kills Reward ({listInfo.join(', ')})
-                                      </div>
-                                    );
+                                let rankAmt = 0;
+                                const dist = selectedTourney?.prizeDistribution || {};
+                                
+                                if (!isNaN(rankNum) && rankNum > 0) {
+                                  if (dist[String(rankNum)] !== undefined) {
+                                    rankAmt = Number(dist[String(rankNum)]) || 0;
                                   } else {
-                                    return (
-                                      <div className="text-success" style={{ fontSize: '0.62rem' }}>
-                                        Kills: +₹{(p.kills * perKill).toFixed(2)}
-                                      </div>
-                                    );
+                                    for (const key of Object.keys(dist)) {
+                                      const parts = key.split(/[-to]/).map(x => parseInt(x.trim()));
+                                      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                                        const start = Math.min(parts[0], parts[1]);
+                                        const end = Math.max(parts[0], parts[1]);
+                                        if (rankNum >= start && rankNum <= end) {
+                                          rankAmt = Number(dist[key]) || 0;
+                                          break;
+                                        }
+                                      }
+                                    }
                                   }
                                 }
-                                return null;
+
+                                const listInfo = [];
+                                const perKill = selectedTourney?.perKillPrize || 0;
+                                let qualifiesForKills = true;
+                                if (maxKillsPlayers !== 'All') {
+                                  const maxRankVal = parseInt(maxKillsPlayers);
+                                  if (isNaN(rankNum) || rankNum > maxRankVal) {
+                                    qualifiesForKills = false;
+                                    listInfo.push(`Exceeds Top ${maxKillsPlayers}`);
+                                  }
+                                }
+                                if (p.kills < minKills) {
+                                  qualifiesForKills = false;
+                                  listInfo.push(`Kills < ${minKills}`);
+                                }
+
+                                const killsAmt = qualifiesForKills ? (p.kills * perKill) : 0;
+
+                                return (
+                                  <div style={{ fontSize: '0.62rem', marginTop: '2px', fontWeight: 500 }}>
+                                    {/* Kills reward text */}
+                                    {perKill > 0 && p.kills > 0 && (
+                                      listInfo.length > 0 ? (
+                                        <div className="text-danger" style={{ fontWeight: 'bold' }}>
+                                          No Kills Reward ({listInfo.join(', ')})
+                                        </div>
+                                      ) : (
+                                        <div className="text-success">
+                                          Kills: +₹{killsAmt.toFixed(2)}
+                                        </div>
+                                      )
+                                    )}
+                                    {/* Prize pool / Rank amount text */}
+                                    {rankAmt > 0 && (
+                                      <div className="text-info">
+                                        Rank {rankNum} Prize: +₹{rankAmt.toFixed(2)}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
                               })()}
                             </td>
                           </tr>

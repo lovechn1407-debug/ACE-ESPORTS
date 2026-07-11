@@ -281,11 +281,7 @@ const Home: React.FC<HomeProps> = ({
         <div className="my-battles-horizontal-scroller mb-4">
           {myContests.map(t => {
             const regCount = t.registeredPlayers 
-              ? Object.values(t.registeredPlayers).reduce((acc: number, p: any) => {
-                  if (t.mode === 'Duo') return acc + (p.teammateUsername ? 2 : 1);
-                  if (t.mode === 'Squad') return acc + 1 + (p.teammateUsername ? 1 : 0) + (p.teammate2Username ? 1 : 0) + (p.teammate3Username ? 1 : 0);
-                  return acc + 1;
-                }, 0)
+              ? Object.keys(t.registeredPlayers).length
               : 0;
             const maxP = t.maxPlayers || 0;
             const spotsL = maxP > 0 ? Math.max(0, maxP - regCount) : Infinity;
