@@ -213,19 +213,20 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                           gap: '10px',
                           padding: '9px 12px',
                           position: 'relative',
-                          background: isBlacklisted
-                            ? `url('/images/match_results_item_bg.webp') no-repeat center center`
-                            : `url('/images/match_results_item_bg.webp') no-repeat center center`,
-                          backgroundSize: 'cover',
+                          backgroundImage: isBlacklisted ? 'none' : `url('/images/match_results_item_bg.webp')`,
+                          backgroundSize: '100% 100%',
+                          backgroundRepeat: 'no-repeat',
                           borderBottom: '1px solid rgba(124, 58, 237, 0.12)',
                         }}
                       >
-                        {/* Red hue overlay for blacklisted */}
+                        {/* Hue-rotated red bg for blacklisted: purple(270°) + hue-rotate(90°) = red(360°) */}
                         {isBlacklisted && (
                           <div style={{
                             position: 'absolute', inset: 0,
-                            background: 'rgba(180, 20, 20, 0.55)',
-                            mixBlendMode: 'multiply',
+                            backgroundImage: `url('/images/match_results_item_bg.webp')`,
+                            backgroundSize: '100% 100%',
+                            backgroundRepeat: 'no-repeat',
+                            filter: 'hue-rotate(90deg) saturate(2) brightness(0.8)',
                             pointerEvents: 'none',
                             zIndex: 0,
                           }} />
@@ -383,16 +384,19 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                       display: 'flex', alignItems: 'center', gap: '10px',
                       padding: '9px 12px',
                       position: 'relative',
-                      background: 'url(/images/match_results_item_bg.webp) no-repeat center center',
-                      backgroundSize: 'cover',
+                      backgroundImage: isBlacklisted ? 'none' : 'url(/images/match_results_item_bg.webp)',
+                      backgroundSize: '100% 100%',
+                      backgroundRepeat: 'no-repeat',
                     }}
                   >
-                    {/* Red hue overlay for blacklisted */}
+                    {/* Hue-rotated red bg for blacklisted: purple(270°) + hue-rotate(90°) = red(360°) */}
                     {isBlacklisted && (
                       <div style={{
                         position: 'absolute', inset: 0,
-                        background: 'rgba(180, 20, 20, 0.55)',
-                        mixBlendMode: 'multiply',
+                        backgroundImage: 'url(/images/match_results_item_bg.webp)',
+                        backgroundSize: '100% 100%',
+                        backgroundRepeat: 'no-repeat',
+                        filter: 'hue-rotate(90deg) saturate(2) brightness(0.8)',
                         pointerEvents: 'none',
                         zIndex: 0,
                       }} />
