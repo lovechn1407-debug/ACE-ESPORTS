@@ -197,13 +197,12 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                     <div
                       key={player.uid + idx}
                       style={{
-                        borderRadius: '8px',
+                        borderRadius: isBlacklisted ? '0px' : '8px',
                         overflow: 'hidden',
-                        border: isBlacklisted ? '1.5px dashed rgba(239,68,68,0.4)' : '1px solid rgba(124, 58, 237, 0.15)',
-                        background: isBlacklisted ? 'rgba(239,68,68,0.04)' : 'rgba(15, 21, 38, 0.5)',
+                        border: isBlacklisted ? '1.5px solid #EF4444' : '1px solid rgba(124, 58, 237, 0.15)',
+                        background: isBlacklisted ? 'rgba(15, 21, 38, 0.5)' : 'rgba(15, 21, 38, 0.5)',
                         display: 'flex',
                         flexDirection: 'column',
-                        opacity: isBlacklisted ? 0.55 : 1,
                       }}
                     >
                       {/* Leader Row */}
@@ -213,28 +212,42 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                           alignItems: 'center',
                           gap: '10px',
                           padding: '9px 12px',
-                          background: "url('/images/match_results_item_bg.webp') no-repeat center center",
+                          position: 'relative',
+                          background: isBlacklisted
+                            ? `url('/images/match_results_item_bg.webp') no-repeat center center`
+                            : `url('/images/match_results_item_bg.webp') no-repeat center center`,
                           backgroundSize: 'cover',
                           borderBottom: '1px solid rgba(124, 58, 237, 0.12)',
                         }}
                       >
+                        {/* Red hue overlay for blacklisted */}
+                        {isBlacklisted && (
+                          <div style={{
+                            position: 'absolute', inset: 0,
+                            background: 'rgba(180, 20, 20, 0.55)',
+                            mixBlendMode: 'multiply',
+                            pointerEvents: 'none',
+                            zIndex: 0,
+                          }} />
+                        )}
+
                         {/* Rank */}
-                        <div style={{ width: '32px', textAlign: 'center', flexShrink: 0 }}>
+                        <div style={{ width: '32px', textAlign: 'center', flexShrink: 0, position: 'relative', zIndex: 1 }}>
                           {player.rank <= 3 ? (
-                            <i className={`bi ${rs.icon}`} style={{ color: rs.color, fontSize: '1rem' }}></i>
+                            <i className={`bi ${rs.icon}`} style={{ color: isBlacklisted ? '#F87171' : rs.color, fontSize: '1rem' }}></i>
                           ) : (
-                            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94A3B8' }}>#{player.rank}</span>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: isBlacklisted ? '#FCA5A5' : '#94A3B8' }}>#{player.rank}</span>
                           )}
                         </div>
 
                         {/* Leader Avatar */}
-                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <div style={{ position: 'relative', flexShrink: 0, zIndex: 1 }}>
                           <img
                             src={avatarUrl}
                             alt={player.displayName}
-                            style={{ width: '34px', height: '34px', borderRadius: '0px', objectFit: 'cover' }}
+                            style={{ width: '34px', height: '34px', borderRadius: '0px', objectFit: 'cover', filter: isBlacklisted ? 'grayscale(0.4) brightness(0.7)' : 'none' }}
                           />
-                          {player.appliedBadgeUrl && (
+                          {player.appliedBadgeUrl && !isBlacklisted && (
                             <span 
                               className="badge-sweep-wrap" 
                               data-effect={player.appliedBadgeEffect || 'light-sweep'}
@@ -252,41 +265,38 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                         </div>
 
                         {/* Leader Info */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
                           <div style={{
                             fontSize: '0.8rem', fontWeight: isMe ? 700 : 600,
-                            color: isMe ? '#E2E8F0' : '#FFFFFF',
+                            color: isBlacklisted ? '#FECACA' : (isMe ? '#E2E8F0' : '#FFFFFF'),
                             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                           }}>
                             {player.displayName}
-                            <span style={{ marginLeft: '4px', fontSize: '0.58rem', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>LDR</span>
-                            {isMe && <span style={{ marginLeft: '4px', fontSize: '0.58rem', background: 'rgba(250,204,21,0.15)', color: '#FACC15', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>YOU</span>}
-                            {isBlacklisted && <span style={{ marginLeft: '4px', fontSize: '0.56rem', background: 'rgba(239,68,68,0.2)', color: '#F87171', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, border: '1px solid rgba(239,68,68,0.35)' }}>⛔ BLACKLISTED</span>}
+                            {!isBlacklisted && <span style={{ marginLeft: '4px', fontSize: '0.58rem', background: 'rgba(74,222,128,0.15)', color: '#4ADE80', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>LDR</span>}
+                            {isMe && !isBlacklisted && <span style={{ marginLeft: '4px', fontSize: '0.58rem', background: 'rgba(250,204,21,0.15)', color: '#FACC15', padding: '1px 4px', borderRadius: '3px', fontWeight: 600 }}>YOU</span>}
+                            {isBlacklisted && <span style={{ marginLeft: '4px', fontSize: '0.58rem', background: 'rgba(239,68,68,0.3)', color: '#FEE2E2', padding: '1px 5px', borderRadius: '3px', fontWeight: 800, letterSpacing: '0.04em' }}>⛔ DISQUALIFIED</span>}
                           </div>
-                          {isBlacklisted && player.blacklistReason && (
-                            <div style={{ fontSize: '0.58rem', color: '#F87171', opacity: 0.7, marginTop: '1px', fontStyle: 'italic' }}>Reason: {player.blacklistReason}</div>
-                          )}
                           {player.inGameUsername && (
-                            <div style={{ fontSize: '0.62rem', color: '#94A3B8', marginTop: '1px' }}>{player.inGameUsername}</div>
+                            <div style={{ fontSize: '0.62rem', color: isBlacklisted ? '#FCA5A5' : '#94A3B8', marginTop: '1px', opacity: isBlacklisted ? 0.7 : 1 }}>{player.inGameUsername}</div>
                           )}
                         </div>
 
                         {/* Leader Individual Kills */}
-                        <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '40px' }}>
-                          <div style={{ fontSize: '0.55rem', color: '#94A3B8', marginBottom: '1px' }}>Ldr Kills</div>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#CBD5E1' }}>{player.leaderKills ?? player.kills ?? 0}</div>
+                        <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '40px', position: 'relative', zIndex: 1 }}>
+                          <div style={{ fontSize: '0.55rem', color: isBlacklisted ? '#FCA5A5' : '#94A3B8', marginBottom: '1px' }}>Ldr Kills</div>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: isBlacklisted ? '#FECACA' : '#CBD5E1' }}>{player.leaderKills ?? player.kills ?? 0}</div>
                         </div>
 
                         {/* Team Total Kills */}
-                        <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '40px' }}>
-                          <div style={{ fontSize: '0.55rem', color: '#FACC15', marginBottom: '1px', fontWeight: 600 }}>Team Kills</div>
-                          <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#FACC15' }}>{player.kills ?? 0}</div>
+                        <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '40px', position: 'relative', zIndex: 1 }}>
+                          <div style={{ fontSize: '0.55rem', color: isBlacklisted ? '#FCA5A5' : '#FACC15', marginBottom: '1px', fontWeight: 600 }}>Team Kills</div>
+                          <div style={{ fontSize: '0.82rem', fontWeight: 800, color: isBlacklisted ? '#FECACA' : '#FACC15' }}>{player.kills ?? 0}</div>
                         </div>
 
                         {/* Winnings */}
-                        <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '54px' }}>
+                        <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '54px', position: 'relative', zIndex: 1 }}>
                           {isBlacklisted ? (
-                            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#F87171' }}>₹0</div>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#FEE2E2' }}>₹0</div>
                           ) : (
                             <>
                               <div style={{ fontSize: '0.55rem', color: '#4ADE80', marginBottom: '1px' }}>Earned</div>
@@ -310,33 +320,49 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                             alignItems: 'center',
                             gap: '10px',
                             padding: '6px 12px 6px 52px',
-                            background: 'rgba(0,0,0,0.18)',
+                            background: isBlacklisted ? 'rgba(120,10,10,0.25)' : 'rgba(0,0,0,0.18)',
                             borderBottom: tmIdx < teammates.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
                           }}
                         >
-                          <i className="bi bi-arrow-return-right" style={{ color: '#475569', fontSize: '0.65rem', flexShrink: 0 }}></i>
+                          <i className="bi bi-arrow-return-right" style={{ color: isBlacklisted ? '#F87171' : '#475569', fontSize: '0.65rem', flexShrink: 0 }}></i>
                           
                           <div style={{ width: '24px', height: '24px', flexShrink: 0, border: '0.5px solid rgba(255,255,255,0.08)' }}>
                             <img
                               src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(tm.username)}`}
                               alt="tm"
-                              style={{ width: '24px', height: '24px', objectFit: 'cover' }}
+                              style={{ width: '24px', height: '24px', objectFit: 'cover', filter: isBlacklisted ? 'grayscale(0.5) brightness(0.6)' : 'none' }}
                             />
                           </div>
 
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '0.72rem', color: '#CBD5E1', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontSize: '0.72rem', color: isBlacklisted ? '#FCA5A5' : '#CBD5E1', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {tm.username}
                             </div>
-                            <div style={{ fontSize: '0.58rem', color: '#475569' }}>UID: {tm.gameUid}</div>
+                            <div style={{ fontSize: '0.58rem', color: isBlacklisted ? '#F87171' : '#475569', opacity: 0.7 }}>UID: {tm.gameUid}</div>
                           </div>
 
                           <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '40px', paddingRight: '98px' }}>
-                            <div style={{ fontSize: '0.55rem', color: '#94A3B8', marginBottom: '1px' }}>Kills</div>
-                            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#CBD5E1' }}>{tm.kills}</div>
+                            <div style={{ fontSize: '0.55rem', color: isBlacklisted ? '#FCA5A5' : '#94A3B8', marginBottom: '1px' }}>Kills</div>
+                            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: isBlacklisted ? '#FECACA' : '#CBD5E1' }}>{tm.kills}</div>
                           </div>
                         </div>
                       ))}
+
+                      {/* Reason snackbar — flat, no border-radius, no gap */}
+                      {isBlacklisted && (
+                        <div style={{
+                          background: '#7F1D1D',
+                          padding: '5px 12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}>
+                          <i className="bi bi-slash-circle-fill" style={{ color: '#FCA5A5', fontSize: '0.7rem', flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.68rem', color: '#FEE2E2', fontWeight: 600 }}>
+                            Disqualified{player.blacklistReason ? `: ${player.blacklistReason}` : ' by admin'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   );
                 }
@@ -345,34 +371,51 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                   <div
                     key={player.uid + idx}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: '10px',
-                      padding: '9px 12px',
+                      display: 'flex', flexDirection: 'column',
                       borderRadius: '0px',
-                      border: isBlacklisted ? '1.5px dashed rgba(239,68,68,0.35)' : 'none',
-                      background: isBlacklisted ? 'rgba(239,68,68,0.04)' : 'url(/images/match_results_item_bg.webp) no-repeat center center',
-                      backgroundSize: 'cover',
-                      opacity: isBlacklisted ? 0.5 : 1,
+                      border: isBlacklisted ? '1.5px solid #EF4444' : 'none',
+                      overflow: 'hidden',
                     }}
                   >
+                  {/* Main player row */}
+                  <div
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      padding: '9px 12px',
+                      position: 'relative',
+                      background: 'url(/images/match_results_item_bg.webp) no-repeat center center',
+                      backgroundSize: 'cover',
+                    }}
+                  >
+                    {/* Red hue overlay for blacklisted */}
+                    {isBlacklisted && (
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        background: 'rgba(180, 20, 20, 0.55)',
+                        mixBlendMode: 'multiply',
+                        pointerEvents: 'none',
+                        zIndex: 0,
+                      }} />
+                    )}
                     {/* Rank number */}
                     <div style={{
-                      width: '32px', textAlign: 'center', flexShrink: 0,
+                      width: '32px', textAlign: 'center', flexShrink: 0, position: 'relative', zIndex: 1,
                     }}>
                       {player.rank <= 3 ? (
-                        <i className={`bi ${rs.icon}`} style={{ color: rs.color, fontSize: '1rem' }}></i>
+                        <i className={`bi ${rs.icon}`} style={{ color: isBlacklisted ? '#F87171' : rs.color, fontSize: '1rem' }}></i>
                       ) : (
-                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#94A3B8' }}>#{player.rank}</span>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: isBlacklisted ? '#FCA5A5' : '#94A3B8' }}>#{player.rank}</span>
                       )}
                     </div>
 
                     {/* Avatar */}
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <div style={{ position: 'relative', flexShrink: 0, zIndex: 1 }}>
                       <img
                         src={avatarUrl}
                         alt={player.displayName}
-                        style={{ width: '34px', height: '34px', borderRadius: '0px', objectFit: 'cover' }}
+                        style={{ width: '34px', height: '34px', borderRadius: '0px', objectFit: 'cover', filter: isBlacklisted ? 'grayscale(0.4) brightness(0.65)' : 'none' }}
                       />
-                      {player.appliedBadgeUrl && (
+                      {player.appliedBadgeUrl && !isBlacklisted && (
                         <span 
                           className="badge-sweep-wrap" 
                           data-effect={player.appliedBadgeEffect || 'light-sweep'}
@@ -390,34 +433,31 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                     </div>
 
                     {/* Name + IGN */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
                       <div style={{
                         fontSize: '0.8rem', fontWeight: isMe ? 700 : 500,
-                        color: isMe ? '#E2E8F0' : '#94A3B8',
+                        color: isBlacklisted ? '#FECACA' : (isMe ? '#E2E8F0' : '#94A3B8'),
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                       }}>
                         {player.displayName}
-                        {isMe && <span style={{ marginLeft: '6px', fontSize: '0.6rem', background: 'rgba(250,204,21,0.15)', color: '#FACC15', padding: '1px 5px', borderRadius: '3px', fontWeight: 600, letterSpacing: '0.04em' }}>YOU</span>}
-                        {isBlacklisted && <span style={{ marginLeft: '5px', fontSize: '0.56rem', background: 'rgba(239,68,68,0.2)', color: '#F87171', padding: '1px 5px', borderRadius: '3px', fontWeight: 700, border: '1px solid rgba(239,68,68,0.35)' }}>⛔ BLACKLISTED</span>}
+                        {isMe && !isBlacklisted && <span style={{ marginLeft: '6px', fontSize: '0.6rem', background: 'rgba(250,204,21,0.15)', color: '#FACC15', padding: '1px 5px', borderRadius: '3px', fontWeight: 600, letterSpacing: '0.04em' }}>YOU</span>}
+                        {isBlacklisted && <span style={{ marginLeft: '5px', fontSize: '0.58rem', background: 'rgba(239,68,68,0.3)', color: '#FEE2E2', padding: '1px 5px', borderRadius: '3px', fontWeight: 800, letterSpacing: '0.04em' }}>⛔ DISQUALIFIED</span>}
                       </div>
-                      {isBlacklisted && player.blacklistReason && (
-                        <div style={{ fontSize: '0.58rem', color: '#F87171', opacity: 0.7, marginTop: '1px', fontStyle: 'italic' }}>Reason: {player.blacklistReason}</div>
-                      )}
                       {player.inGameUsername && (
-                        <div style={{ fontSize: '0.62rem', color: '#94A3B8', marginTop: '1px' }}>{player.inGameUsername}</div>
+                        <div style={{ fontSize: '0.62rem', color: isBlacklisted ? '#FCA5A5' : '#94A3B8', marginTop: '1px', opacity: isBlacklisted ? 0.7 : 1 }}>{player.inGameUsername}</div>
                       )}
                     </div>
 
                     {/* Kill count */}
-                    <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '40px' }}>
-                      <div style={{ fontSize: '0.62rem', color: '#FFFFFF', marginBottom: '1px', opacity: 0.8 }}>Kills</div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#FFFFFF' }}>{player.kills ?? 0}</div>
+                    <div style={{ textAlign: 'center', flexShrink: 0, minWidth: '40px', position: 'relative', zIndex: 1 }}>
+                      <div style={{ fontSize: '0.62rem', color: isBlacklisted ? '#FCA5A5' : '#FFFFFF', marginBottom: '1px', opacity: 0.8 }}>Kills</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: isBlacklisted ? '#FECACA' : '#FFFFFF' }}>{player.kills ?? 0}</div>
                     </div>
 
                     {/* Winnings */}
-                    <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '54px' }}>
+                    <div style={{ textAlign: 'right', flexShrink: 0, minWidth: '54px', position: 'relative', zIndex: 1 }}>
                       {isBlacklisted ? (
-                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#F87171' }}>₹0</div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#FEE2E2' }}>₹0</div>
                       ) : (
                         <>
                           <div style={{ fontSize: '0.62rem', color: '#FFFFFF', marginBottom: '1px', opacity: 0.8 }}>Earned</div>
@@ -430,6 +470,23 @@ const MatchResultsModal: React.FC<MatchResultsModalProps> = ({ tournamentId, tou
                         </>
                       )}
                     </div>
+                  </div>
+
+                  {/* Reason snackbar — flat, zero border-radius, zero gap, flush below the card */}
+                  {isBlacklisted && (
+                    <div style={{
+                      background: '#7F1D1D',
+                      padding: '5px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}>
+                      <i className="bi bi-slash-circle-fill" style={{ color: '#FCA5A5', fontSize: '0.7rem', flexShrink: 0 }} />
+                      <span style={{ fontSize: '0.68rem', color: '#FEE2E2', fontWeight: 600 }}>
+                        Disqualified{player.blacklistReason ? `: ${player.blacklistReason}` : ' by admin'}
+                      </span>
+                    </div>
+                  )}
                   </div>
                 );
               })}
